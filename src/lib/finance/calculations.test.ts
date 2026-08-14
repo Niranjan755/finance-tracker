@@ -84,17 +84,16 @@ describe('computeAccountTotals', () => {
     expect(totals.totalAssetsCents).toBe(toCents('100'))
   })
 
-  it('converts mixed-currency balances into the selected base currency before summing net worth', () => {
-    const totals = computeAccountTotals(
-      [
-        account({ id: 'usd', type: 'checking', currency: 'USD', balanceCents: toCents('107') }),
-        account({ id: 'inr', type: 'checking', currency: 'INR', balanceCents: toCents('10000') }),
-      ],
-      'USD',
-    )
+  it('keeps each currency in its own bucket instead of mixing different currencies together', () => {
+    const totals = computeAccountTotals([
+      account({ id: 'usd', type: 'checking', currency: 'USD', balanceCents: toCents('107') }),
+      account({ id: 'inr', type: 'checking', currency: 'INR', balanceCents: toCents('10000') }),
+    ])
 
-    expect(totals.totalAssetsCents).toBe(toCents('227.48'))
-    expect(totals.netWorthCents).toBe(toCents('227.48'))
+    expect(totals.totalAssetsCents).toBe(toCents('107') + toCents('10000'))
+    expect(totals.netWorthCents).toBe(toCents('107') + toCents('10000'))
+    expect(totals.byCurrency.USD.netWorthCents).toBe(toCents('107'))
+    expect(totals.byCurrency.INR.netWorthCents).toBe(toCents('10000'))
   })
 })
 
