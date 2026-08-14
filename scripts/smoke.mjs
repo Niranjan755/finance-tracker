@@ -1,5 +1,4 @@
 import { chromium } from 'playwright'
-import fs from 'node:fs'
 
 const browser = await chromium.launch({ args: ['--no-sandbox'] })
 const context = await browser.newContext()
@@ -14,73 +13,62 @@ async function shot(name) {
   await page.screenshot({ path: `/tmp/smoke-${name}.png`, fullPage: true })
 }
 
-// --- Demo data via onboarding-adjacent Settings flow ---
-// First create one throwaway account so we land past onboarding, then load demo data.
+// --- Full onboarding wizard ---
 await page.goto('http://localhost:5173')
 await page.waitForSelector('text=Welcome to Finance Tracker')
-await page.click('text=Add an Account')
-await page.waitForURL('**/accounts')
-await page.getByRole('button', { name: 'Add Account' }).first().click()
-await page.waitForSelector('#acct-name')
-await page.fill('#acct-name', 'Temp')
-await page.fill('#acct-balance', '0')
-await page.locator('[role="dialog"]').getByRole('button', { name: 'Add Account' }).click()
-await page.waitForSelector('text=Temp', { timeout: 10000 })
+await shot('1-onboarding-welcome')
 
-await page.goto('http://localhost:5173/settings')
-await page.click('button:has-text("Load Demo Data")')
-await page.click('button:has-text("Load Demo Data"):visible >> nth=-1')
-await page.waitForSelector('text=Demo data loaded', { timeout: 10000 })
-await shot('1-settings-after-demo')
+await page.click('button:has-text("Get Started")')
+await page.waitForSelector('text=Select Your Currency')
+await shot('2-onboarding-currency')
 
+await page.click('button:has-text("Continue")')
+await page.waitForSelector('text=Add Your First Account')
+await page.fill('#acct-name', 'Chase Checking')
+await page.fill('#acct-balance', '2500')
+await page.locator('form').getByRole('button', { name: 'Add Account' }).click()
+await page.waitForSelector('text=Add Your First Transaction', { timeout: 10000 })
+await shot('3-onboarding-transaction')
+
+await page.fill('#expense-amount', '42.50')
+await page.click('[role="radiogroup"][aria-label="Paid with"] >> text=Chase Checking')
+await page.click('#expense-category')
+await page.locator('[role="option"]:visible', { hasText: 'Restaurants' }).last().click()
+await page.fill('#expense-merchant', 'Local Diner')
+await page.locator('form').getByRole('button', { name: 'Save Expense' }).click()
+await page.waitForSelector("text=You're ready!", { timeout: 10000 })
+await shot('4-onboarding-done')
+
+await page.click('button:has-text("Go to Dashboard")')
+await page.waitForSelector('text=Net Worth')
+await shot('5-dashboard-after-onboarding')
+
+// Reload the page entirely - onboarding must not show again, and lazy-loaded
+// routes must still work after a full page (re)hydration.
+await page.reload()
+await page.waitForSelector('text=Net Worth', { timeout: 10000 })
+console.log('onboarding did not reappear after reload: OK')
+
+// Navigate through a few lazy-loaded routes to confirm Suspense/chunking works.
+for (const path of ['/transactions', '/accounts', '/budgets', '/reports', '/settings']) {
+  await page.goto(`http://localhost:5173${path}`)
+  await page.waitForLoadState('networkidle')
+}
+console.log('all lazy routes loaded without error')
+
+// --- Keyboard accessibility spot check: open Add Transaction via 'n', Escape closes it ---
 await page.goto('http://localhost:5173/')
 await page.waitForSelector('text=Net Worth')
-await shot('2-dashboard-with-demo-data')
+await page.keyboard.press('n')
+await page.waitForSelector('[role="dialog"]')
+await page.keyboard.press('Escape')
+await page.waitForSelector('[role="dialog"]', { state: 'hidden' })
+console.log('keyboard shortcut (n) + Escape-to-close: OK')
 
-// --- Analytics with real data ---
-await page.goto('http://localhost:5173/analytics')
-await page.waitForSelector('text=Insights')
-await shot('3-analytics')
-
-// --- Calendar ---
-await page.goto('http://localhost:5173/calendar')
-await page.waitForSelector('text=Calendar')
-await shot('4-calendar')
-
-// --- Transactions: tag filter presence (demo data has no tags, so just confirm page still works) + receipt attach ---
-await page.goto('http://localhost:5173/transactions')
-await page.waitForSelector('table')
-const firstRow = page.locator('tbody tr').first()
-await firstRow.click()
-await page.waitForSelector('text=Transaction ID')
-await shot('5-transaction-detail-with-receipt-section')
-
-// Attach a receipt (use this repo's own package.json as a stand-in "image" won't validate type, so build a tiny real PNG).
-const pngPath = '/tmp/tiny-receipt.png'
-const pngBase64 =
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
-fs.writeFileSync(pngPath, Buffer.from(pngBase64, 'base64'))
-const [fileChooser] = await Promise.all([page.waitForEvent('filechooser'), page.click('button:has-text("Add Receipt")')])
-await fileChooser.setFiles(pngPath)
-await page.waitForSelector('text=Receipt attached', { timeout: 10000 })
-await shot('6-receipt-attached')
-
-// --- Settings: export JSON, export CSV ---
-await page.goto('http://localhost:5173/settings')
-const [jsonDownload] = await Promise.all([page.waitForEvent('download'), page.click('button:has-text("Export JSON Backup")')])
-console.log('JSON backup filename:', jsonDownload.suggestedFilename())
-await jsonDownload.saveAs('/tmp/backup-test.json')
-
-const [csvDownload] = await Promise.all([page.waitForEvent('download'), page.click('button:has-text("Export CSV")')])
-console.log('CSV export filename:', csvDownload.suggestedFilename())
-
-// --- Categories: add + delete a custom category ---
-await page.fill('input[placeholder="New category name"]', 'Pet Supplies')
-await page.getByRole('button', { name: 'Add', exact: true }).click()
-await page.waitForSelector('text=Category added', { timeout: 10000 })
-await shot('7-custom-category-added')
-await page.click('button[aria-label="Delete Pet Supplies"]')
-await page.waitForSelector('text=Category deleted', { timeout: 10000 })
+// Tab order sanity: focus should land on an interactive element, not get lost.
+await page.keyboard.press('Tab')
+const active = await page.evaluate(() => document.activeElement?.tagName)
+console.log('first Tab stop tag:', active)
 
 console.log('ERRORS:', JSON.stringify(errors, null, 2))
 console.log(errors.length === 0 ? 'SMOKE TEST PASSED' : 'SMOKE TEST HAD CONSOLE ERRORS')

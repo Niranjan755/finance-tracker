@@ -1,20 +1,22 @@
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { Toaster } from '@/components/ui/sonner'
 import { Skeleton } from '@/components/ui/skeleton'
 import { AppShell } from '@/components/layout/AppShell'
-import { AccountDetailPage } from '@/pages/AccountDetailPage'
-import { AccountsPage } from '@/pages/AccountsPage'
-import { DashboardPage } from '@/pages/DashboardPage'
-import { TransactionsPage } from '@/pages/TransactionsPage'
-import { BudgetsPage } from '@/pages/BudgetsPage'
-import { UpcomingPage } from '@/pages/UpcomingPage'
-import { ReportsPage } from '@/pages/ReportsPage'
-import { AnalyticsPage } from '@/pages/AnalyticsPage'
-import { CalendarPage } from '@/pages/CalendarPage'
-import { SettingsPage } from '@/pages/SettingsPage'
+import { OnboardingFlow } from '@/features/onboarding/OnboardingFlow'
 import { useThemeSync } from '@/hooks/useThemeSync'
 import { useFinanceStore } from '@/store/financeStore'
+
+const DashboardPage = lazy(() => import('@/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })))
+const AccountsPage = lazy(() => import('@/pages/AccountsPage').then((m) => ({ default: m.AccountsPage })))
+const AccountDetailPage = lazy(() => import('@/pages/AccountDetailPage').then((m) => ({ default: m.AccountDetailPage })))
+const TransactionsPage = lazy(() => import('@/pages/TransactionsPage').then((m) => ({ default: m.TransactionsPage })))
+const BudgetsPage = lazy(() => import('@/pages/BudgetsPage').then((m) => ({ default: m.BudgetsPage })))
+const UpcomingPage = lazy(() => import('@/pages/UpcomingPage').then((m) => ({ default: m.UpcomingPage })))
+const ReportsPage = lazy(() => import('@/pages/ReportsPage').then((m) => ({ default: m.ReportsPage })))
+const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage').then((m) => ({ default: m.AnalyticsPage })))
+const CalendarPage = lazy(() => import('@/pages/CalendarPage').then((m) => ({ default: m.CalendarPage })))
+const SettingsPage = lazy(() => import('@/pages/SettingsPage').then((m) => ({ default: m.SettingsPage })))
 
 function LoadingScreen() {
   return (
@@ -45,6 +47,7 @@ function AppContent() {
   const init = useFinanceStore((s) => s.init)
   const runDueRecurring = useFinanceStore((s) => s.runDueRecurring)
   const autoGenerateRecurring = useFinanceStore((s) => s.settings.autoGenerateRecurring)
+  const onboardingComplete = useFinanceStore((s) => s.settings.onboardingComplete)
   useThemeSync()
 
   useEffect(() => {
@@ -61,22 +64,25 @@ function AppContent() {
 
   if (status === 'error') return <ErrorScreen message={error ?? 'Something went wrong.'} />
   if (status !== 'ready') return <LoadingScreen />
+  if (!onboardingComplete) return <OnboardingFlow />
 
   return (
-    <Routes>
-      <Route element={<AppShell />}>
-        <Route path="/" element={<DashboardPage />} />
-        <Route path="/accounts" element={<AccountsPage />} />
-        <Route path="/accounts/:id" element={<AccountDetailPage />} />
-        <Route path="/transactions" element={<TransactionsPage />} />
-        <Route path="/budgets" element={<BudgetsPage />} />
-        <Route path="/upcoming" element={<UpcomingPage />} />
-        <Route path="/reports" element={<ReportsPage />} />
-        <Route path="/analytics" element={<AnalyticsPage />} />
-        <Route path="/calendar" element={<CalendarPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
-      </Route>
-    </Routes>
+    <Suspense fallback={<LoadingScreen />}>
+      <Routes>
+        <Route element={<AppShell />}>
+          <Route path="/" element={<DashboardPage />} />
+          <Route path="/accounts" element={<AccountsPage />} />
+          <Route path="/accounts/:id" element={<AccountDetailPage />} />
+          <Route path="/transactions" element={<TransactionsPage />} />
+          <Route path="/budgets" element={<BudgetsPage />} />
+          <Route path="/upcoming" element={<UpcomingPage />} />
+          <Route path="/reports" element={<ReportsPage />} />
+          <Route path="/analytics" element={<AnalyticsPage />} />
+          <Route path="/calendar" element={<CalendarPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+        </Route>
+      </Routes>
+    </Suspense>
   )
 }
 
