@@ -27,6 +27,7 @@ import type { AccountFormValues } from '@/lib/validation/account'
 
 export function AccountsPage() {
   const accounts = useFinanceStore((s) => s.accounts)
+  const settings = useFinanceStore((s) => s.settings)
   const addAccount = useFinanceStore((s) => s.addAccount)
   const updateAccount = useFinanceStore((s) => s.updateAccount)
   const removeAccount = useFinanceStore((s) => s.removeAccount)
@@ -35,7 +36,7 @@ export function AccountsPage() {
   const [editingAccount, setEditingAccount] = useState<Account | undefined>(undefined)
   const [deletingAccount, setDeletingAccount] = useState<Account | null>(null)
 
-  const totals = computeAccountTotals(accounts)
+  const totals = computeAccountTotals(accounts, settings.currency)
   const liquid = accounts.filter((a) => a.type !== 'credit_card')
   const creditCards = accounts.filter((a) => a.type === 'credit_card')
 
@@ -129,6 +130,7 @@ export function AccountsPage() {
               cents={totals.totalAssetsCents}
               kind="neutral"
               signed={false}
+              currency={settings.currency}
               className="text-xl font-semibold"
             />
           </Card>
@@ -138,6 +140,7 @@ export function AccountsPage() {
               cents={totals.totalLiabilitiesCents}
               kind="neutral"
               signed={false}
+              currency={settings.currency}
               className="text-xl font-semibold"
             />
           </Card>
@@ -147,6 +150,7 @@ export function AccountsPage() {
               cents={totals.netWorthCents}
               kind="neutral"
               signed={false}
+              currency={settings.currency}
               className="text-xl font-semibold"
             />
           </Card>

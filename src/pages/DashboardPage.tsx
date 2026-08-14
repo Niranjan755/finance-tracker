@@ -31,6 +31,7 @@ import {
 import { getMonthBounds, isDateInRange, todayISODate } from '@/lib/date'
 import { getIcon } from '@/lib/icons'
 import { formatCurrency } from '@/lib/money'
+import type { Currency } from '@/types'
 
 const MONTHS_FOR_PRESET: Record<DateRangePreset, number> = {
   '7d': 3,
@@ -47,9 +48,10 @@ export function DashboardPage() {
   const transactions = useFinanceStore((s) => s.transactions)
   const transfers = useFinanceStore((s) => s.transfers)
   const categories = useFinanceStore((s) => s.categories)
+  const settings = useFinanceStore((s) => s.settings)
   const [preset, setPreset] = useState<DateRangePreset>('30d')
 
-  const totals = computeAccountTotals(accounts)
+  const totals = computeAccountTotals(accounts, settings.currency)
   const bounds = useMemo(() => {
     const now = new Date()
     return getMonthBounds(now.getFullYear(), now.getMonth() + 1)
@@ -123,9 +125,18 @@ export function DashboardPage() {
       />
 
       <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Net Worth" cents={totals.netWorthCents} />
-        <StatCard label="Available Cash" cents={totals.availableCashCents} />
-        <StatCard label="Credit Card Debt" cents={totals.creditCardDebtCents} kind="expense" />
+        <StatCard label="Net Worth" cents={totals.netWorthCents} currency={settings.currency} />
+        <StatCard
+          label="Available Cash"
+          cents={totals.availableCashCents}
+          currency={settings.currency}
+        />
+        <StatCard
+          label="Credit Card Debt"
+          cents={totals.creditCardDebtCents}
+          kind="expense"
+          currency={settings.currency}
+        />
         <Card className="p-4">
           <p className="text-muted-foreground text-xs font-medium">Savings Rate</p>
           <p className="mt-1 text-2xl font-semibold tabular-nums">
@@ -282,10 +293,12 @@ function StatCard({
   label,
   cents,
   kind = 'neutral',
+  currency = 'USD',
 }: {
   label: string
   cents: number
   kind?: 'income' | 'expense' | 'neutral'
+  currency?: Currency
 }) {
   return (
     <Card className="p-4">
@@ -294,6 +307,7 @@ function StatCard({
         cents={cents}
         kind={kind}
         signed={false}
+        currency={currency}
         className="mt-1 block text-2xl font-semibold"
       />
     </Card>

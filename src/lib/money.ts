@@ -16,6 +16,15 @@ export const CURRENCIES: { code: Currency; symbol: string; locale: string; name:
   { code: 'AUD', symbol: 'A$', locale: 'en-AU', name: 'Australian Dollar' },
 ]
 
+export const FX_RATE_TO_USD: Record<Currency, number> = {
+  USD: 1,
+  INR: 1 / 83,
+  EUR: 1.09,
+  GBP: 1.28,
+  CAD: 0.74,
+  AUD: 0.66,
+}
+
 const LOCALE_BY_CURRENCY: Record<Currency, string> = Object.fromEntries(
   CURRENCIES.map((c) => [c.code, c.locale]),
 ) as Record<Currency, string>
@@ -64,6 +73,21 @@ export function centsToInputValue(cents: Cents): string {
 
 export function addMoney(...values: Cents[]): Cents {
   return values.reduce((sum, v) => sum + v, 0)
+}
+
+export function convertCentsToCurrency(
+  cents: Cents,
+  fromCurrency: Currency,
+  toCurrency: Currency,
+): Cents {
+  if (fromCurrency === toCurrency) return cents
+  const fromRate = FX_RATE_TO_USD[fromCurrency] ?? 1
+  const toRate = FX_RATE_TO_USD[toCurrency] ?? 1
+  if (!Number.isFinite(fromRate) || !Number.isFinite(toRate) || fromRate <= 0 || toRate <= 0) {
+    return cents
+  }
+
+  return Math.round((cents * fromRate) / toRate)
 }
 
 export function subtractMoney(a: Cents, b: Cents): Cents {

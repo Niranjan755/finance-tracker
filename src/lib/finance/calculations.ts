@@ -1,6 +1,6 @@
 import { isDateInRange, type MonthBounds } from '@/lib/date'
-import { percentOf } from '@/lib/money'
-import type { Account, Budget, Category, Transaction, Transfer } from '@/types'
+import { convertCentsToCurrency, percentOf } from '@/lib/money'
+import type { Account, Budget, Category, Currency, Transaction, Transfer } from '@/types'
 import { isLiabilityAccountType } from './math'
 
 export interface AccountTotals {
@@ -13,7 +13,10 @@ export interface AccountTotals {
 
 const LIQUID_ASSET_TYPES: Account['type'][] = ['checking', 'savings', 'cash', 'debit_card']
 
-export function computeAccountTotals(accounts: Account[]): AccountTotals {
+export function computeAccountTotals(
+  accounts: Account[],
+  baseCurrency: Currency = 'USD',
+): AccountTotals {
   let totalAssets = 0
   let totalLiabilities = 0
   let availableCash = 0
@@ -21,13 +24,14 @@ export function computeAccountTotals(accounts: Account[]): AccountTotals {
 
   for (const account of accounts) {
     if (!account.isActive) continue
+    const normalizedBalance = convertCentsToCurrency(account.balanceCents, account.currency, baseCurrency)
     if (isLiabilityAccountType(account.type)) {
-      totalLiabilities += account.balanceCents
-      if (account.type === 'credit_card') creditCardDebt += account.balanceCents
+      totalLiabilities += normalizedBalance
+      if (account.type === 'credit_card') creditCardDebt += normalizedBalance
     } else {
-      totalAssets += account.balanceCents
+      totalAssets += normalizedBalance
       if (LIQUID_ASSET_TYPES.includes(account.type)) {
-        availableCash += account.balanceCents
+        availableCash += normalizedBalance
       }
     }
   }
@@ -51,12 +55,18 @@ export function netWorthAsOf(
   accounts: Account[],
   transactions: Transaction[],
   asOfISO: string,
+  baseCurrency: Currency = 'USD',
 ): number {
-  const current = computeAccountTotals(accounts).netWorthCents
+  const current = computeAccountTotals(accounts, baseCurrency).netWorthCents
+  const accountById = new Map(accounts.map((a) => [a.id, a]))
   let adjustment = 0
   for (const t of transactions) {
     if (t.date > asOfISO) {
-      adjustment += t.type === 'income' ? -t.amountCents : t.amountCents
+      const account = accountById.get(t.accountId)
+      const normalizedAmount = account
+        ? convertCentsToCurrency(t.amountCents, account.currency, baseCurrency)
+        : t.amountCents
+      adjustment += t.type === 'income' ? -normalizedAmount : normalizedAmount
     }
   }
   return current + adjustment
