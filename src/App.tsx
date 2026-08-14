@@ -6,6 +6,7 @@ import { AppShell } from '@/components/layout/AppShell'
 import { AccountDetailPage } from '@/pages/AccountDetailPage'
 import { AccountsPage } from '@/pages/AccountsPage'
 import { DashboardPage } from '@/pages/DashboardPage'
+import { TransactionsPage } from '@/pages/TransactionsPage'
 import { useThemeSync } from '@/hooks/useThemeSync'
 import { useFinanceStore } from '@/store/financeStore'
 
@@ -61,6 +62,7 @@ function AppContent() {
         <Route path="/" element={<DashboardPage />} />
         <Route path="/accounts" element={<AccountsPage />} />
         <Route path="/accounts/:id" element={<AccountDetailPage />} />
+        <Route path="/transactions" element={<TransactionsPage />} />
       </Route>
     </Routes>
   )

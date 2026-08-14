@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
+import { TransactionDialog } from '@/features/transactions/TransactionDialog'
 import { AppSidebar } from './AppSidebar'
 import { BottomNav } from './BottomNav'
 import { Header } from './Header'
@@ -17,6 +18,7 @@ export function AppShell() {
         </main>
       </SidebarInset>
       <BottomNav />
+      <TransactionDialog />
     </SidebarProvider>
   )
 }

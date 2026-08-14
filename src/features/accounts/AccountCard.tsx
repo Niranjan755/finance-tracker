@@ -56,13 +56,13 @@ export function AccountCard({ account, onEdit, onDeactivate, onReactivate, onDel
             }
           />
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onSelect={onEdit}>Edit</DropdownMenuItem>
+            <DropdownMenuItem onClick={onEdit}>Edit</DropdownMenuItem>
             {account.isActive ? (
-              <DropdownMenuItem onSelect={onDeactivate}>Deactivate</DropdownMenuItem>
+              <DropdownMenuItem onClick={onDeactivate}>Deactivate</DropdownMenuItem>
             ) : (
-              <DropdownMenuItem onSelect={onReactivate}>Reactivate</DropdownMenuItem>
+              <DropdownMenuItem onClick={onReactivate}>Reactivate</DropdownMenuItem>
             )}
-            <DropdownMenuItem variant="destructive" onSelect={onDelete}>
+            <DropdownMenuItem variant="destructive" onClick={onDelete}>
               Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -71,7 +71,7 @@ export function AccountCard({ account, onEdit, onDeactivate, onReactivate, onDel
 
       <div className="flex items-baseline justify-between">
         <span className="text-xs text-muted-foreground">
-          {account.type} {account.lastFour && `••••${account.lastFour}`}
+          {ACCOUNT_TYPE_LABELS[account.type]} {account.lastFour && `••••${account.lastFour}`}
         </span>
       </div>
 

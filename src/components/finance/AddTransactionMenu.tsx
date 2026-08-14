@@ -23,15 +23,15 @@ export function AddTransactionMenu({ className }: { className?: string }) {
         }
       />
       <DropdownMenuContent align="end" className="w-48">
-        <DropdownMenuItem onSelect={() => openAddTransaction('expense')}>
+        <DropdownMenuItem onClick={() => openAddTransaction('expense')}>
           <ArrowDownCircle className="size-4 text-red-500" aria-hidden="true" />
           Add Expense
         </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => openAddTransaction('income')}>
+        <DropdownMenuItem onClick={() => openAddTransaction('income')}>
           <ArrowUpCircle className="size-4 text-emerald-500" aria-hidden="true" />
           Add Income
         </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => openAddTransaction('transfer')}>
+        <DropdownMenuItem onClick={() => openAddTransaction('transfer')}>
           <ArrowLeftRight className="size-4 text-blue-500" aria-hidden="true" />
           Transfer Money
         </DropdownMenuItem>
