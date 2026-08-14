@@ -33,6 +33,7 @@ interface Filters {
   dateTo: string
   amountMin: string
   amountMax: string
+  tag: string
 }
 
 const DEFAULT_FILTERS: Filters = {
@@ -44,6 +45,7 @@ const DEFAULT_FILTERS: Filters = {
   dateTo: '',
   amountMin: '',
   amountMax: '',
+  tag: 'all',
 }
 
 const PAGE_SIZE = 50
@@ -67,6 +69,7 @@ export function TransactionsPage() {
 
   const categoryById = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories])
   const accountById = useMemo(() => new Map(accounts.map((a) => [a.id, a])), [accounts])
+  const allTags = useMemo(() => [...new Set(transactions.flatMap((t) => t.tags))].sort(), [transactions])
 
   useEffect(() => {
     const highlightId = searchParams.get('highlight')
@@ -122,6 +125,9 @@ export function TransactionsPage() {
       if (filters.categoryId !== 'all') {
         if (row.kind === 'transfer') return false
         if (row.transaction.categoryId !== filters.categoryId) return false
+      }
+      if (filters.tag !== 'all') {
+        if (row.kind === 'transfer' || !row.transaction.tags.includes(filters.tag)) return false
       }
       if (filters.dateFrom && row.date < filters.dateFrom) return false
       if (filters.dateTo && row.date > filters.dateTo) return false
@@ -250,6 +256,25 @@ export function TransactionsPage() {
                 ))}
               </SelectContent>
             </Select>
+            {allTags.length > 0 && (
+              <Select
+                value={filters.tag}
+                onValueChange={(v) => updateFilter('tag', v ?? 'all')}
+                items={{ all: 'All Tags', ...Object.fromEntries(allTags.map((t) => [t, `#${t}`])) }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Tag" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Tags</SelectItem>
+                  {allTags.map((t) => (
+                    <SelectItem key={t} value={t}>
+                      #{t}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
             <div className="grid grid-cols-2 gap-2">
               <Input type="date" aria-label="From date" value={filters.dateFrom} onChange={(e) => updateFilter('dateFrom', e.target.value)} />
               <Input type="date" aria-label="To date" value={filters.dateTo} onChange={(e) => updateFilter('dateTo', e.target.value)} />

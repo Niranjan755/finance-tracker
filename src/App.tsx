@@ -12,6 +12,7 @@ import { UpcomingPage } from '@/pages/UpcomingPage'
 import { ReportsPage } from '@/pages/ReportsPage'
 import { AnalyticsPage } from '@/pages/AnalyticsPage'
 import { CalendarPage } from '@/pages/CalendarPage'
+import { SettingsPage } from '@/pages/SettingsPage'
 import { useThemeSync } from '@/hooks/useThemeSync'
 import { useFinanceStore } from '@/store/financeStore'
 
@@ -73,6 +74,7 @@ function AppContent() {
         <Route path="/reports" element={<ReportsPage />} />
         <Route path="/analytics" element={<AnalyticsPage />} />
         <Route path="/calendar" element={<CalendarPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
       </Route>
     </Routes>
   )

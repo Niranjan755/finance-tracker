@@ -19,6 +19,7 @@ import { formatDisplayDate } from '@/lib/date'
 import { MoneyText } from '@/components/finance/MoneyText'
 import { useFinanceStore } from '@/store/financeStore'
 import { useUIStore } from '@/store/uiStore'
+import { ReceiptSection } from './ReceiptSection'
 import type { Transaction } from '@/types'
 
 interface TransactionDetailSheetProps {
@@ -96,6 +97,8 @@ export function TransactionDetailSheet({ transaction, onClose }: TransactionDeta
               )}
               <Row label="Transaction ID" value={transaction.id} mono />
             </dl>
+
+            <ReceiptSection transactionId={transaction.id} />
 
             <div className="grid grid-cols-3 gap-2">
               <Button

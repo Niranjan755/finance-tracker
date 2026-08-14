@@ -1,4 +1,5 @@
 import { chromium } from 'playwright'
+import fs from 'node:fs'
 
 const browser = await chromium.launch({ args: ['--no-sandbox'] })
 const context = await browser.newContext()
@@ -13,63 +14,73 @@ async function shot(name) {
   await page.screenshot({ path: `/tmp/smoke-${name}.png`, fullPage: true })
 }
 
+// --- Demo data via onboarding-adjacent Settings flow ---
+// First create one throwaway account so we land past onboarding, then load demo data.
 await page.goto('http://localhost:5173')
 await page.waitForSelector('text=Welcome to Finance Tracker')
 await page.click('text=Add an Account')
 await page.waitForURL('**/accounts')
-
 await page.getByRole('button', { name: 'Add Account' }).first().click()
 await page.waitForSelector('#acct-name')
-await page.fill('#acct-name', 'Chase Checking')
-await page.fill('#acct-balance', '8450')
+await page.fill('#acct-name', 'Temp')
+await page.fill('#acct-balance', '0')
 await page.locator('[role="dialog"]').getByRole('button', { name: 'Add Account' }).click()
-await page.waitForSelector('text=Chase Checking', { timeout: 10000 })
+await page.waitForSelector('text=Temp', { timeout: 10000 })
 
-async function addIncome({ amount, category, merchant }) {
-  await page.click('button:has-text("Add Transaction")')
-  await page.getByRole('menuitem', { name: 'Add Income' }).click()
-  await page.waitForSelector('#income-amount')
-  await page.fill('#income-amount', amount)
-  await page.click('[role="radiogroup"][aria-label="Received into"] >> text=Chase Checking')
-  await page.click('#income-category')
-  await page.locator('[role="option"]:visible', { hasText: category }).last().click()
-  await page.fill('#income-merchant', merchant)
-  await page.locator('[role="dialog"]').getByRole('button', { name: 'Save Income' }).click()
-  await page.waitForSelector('text=Income added', { timeout: 10000 })
-}
+await page.goto('http://localhost:5173/settings')
+await page.click('button:has-text("Load Demo Data")')
+await page.click('button:has-text("Load Demo Data"):visible >> nth=-1')
+await page.waitForSelector('text=Demo data loaded', { timeout: 10000 })
+await shot('1-settings-after-demo')
 
-async function addExpense({ amount, category, merchant }) {
-  await page.click('button:has-text("Add Transaction")')
-  await page.getByRole('menuitem', { name: 'Add Expense' }).click()
-  await page.waitForSelector('#expense-amount')
-  await page.fill('#expense-amount', amount)
-  await page.click('[role="radiogroup"][aria-label="Paid with"] >> text=Chase Checking')
-  await page.click('#expense-category')
-  await page.locator('[role="option"]:visible', { hasText: category }).last().click()
-  await page.fill('#expense-merchant', merchant)
-  await page.locator('[role="dialog"]').getByRole('button', { name: 'Save Expense' }).click()
-  await page.waitForSelector('text=Expense added', { timeout: 10000 })
-}
+await page.goto('http://localhost:5173/')
+await page.waitForSelector('text=Net Worth')
+await shot('2-dashboard-with-demo-data')
 
-await addIncome({ amount: '9050', category: 'Salary', merchant: 'Employer Inc' })
-await addExpense({ amount: '4180', category: 'Groceries', merchant: 'Whole Foods' })
+// --- Analytics with real data ---
+await page.goto('http://localhost:5173/analytics')
+await page.waitForSelector('text=Insights')
+await shot('3-analytics')
 
-await page.goto('http://localhost:5173/reports')
-await page.waitForSelector('text=Financial Statement')
-await shot('1-report-statement')
+// --- Calendar ---
+await page.goto('http://localhost:5173/calendar')
+await page.waitForSelector('text=Calendar')
+await shot('4-calendar')
 
-const bodyText = await page.locator('body').innerText()
-console.log('REPORTS PAGE TEXT SNAPSHOT:\n', bodyText)
+// --- Transactions: tag filter presence (demo data has no tags, so just confirm page still works) + receipt attach ---
+await page.goto('http://localhost:5173/transactions')
+await page.waitForSelector('table')
+const firstRow = page.locator('tbody tr').first()
+await firstRow.click()
+await page.waitForSelector('text=Transaction ID')
+await shot('5-transaction-detail-with-receipt-section')
 
-const [csvDownload] = await Promise.all([page.waitForEvent('download'), page.click('button:has-text("CSV")')])
-console.log('CSV download filename:', csvDownload.suggestedFilename())
+// Attach a receipt (use this repo's own package.json as a stand-in "image" won't validate type, so build a tiny real PNG).
+const pngPath = '/tmp/tiny-receipt.png'
+const pngBase64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
+fs.writeFileSync(pngPath, Buffer.from(pngBase64, 'base64'))
+const [fileChooser] = await Promise.all([page.waitForEvent('filechooser'), page.click('button:has-text("Add Receipt")')])
+await fileChooser.setFiles(pngPath)
+await page.waitForSelector('text=Receipt attached', { timeout: 10000 })
+await shot('6-receipt-attached')
 
-const [pdfDownload] = await Promise.all([page.waitForEvent('download'), page.click('button:has-text("PDF")')])
-console.log('PDF download filename:', pdfDownload.suggestedFilename())
-await pdfDownload.saveAs('/tmp/statement-test.pdf')
+// --- Settings: export JSON, export CSV ---
+await page.goto('http://localhost:5173/settings')
+const [jsonDownload] = await Promise.all([page.waitForEvent('download'), page.click('button:has-text("Export JSON Backup")')])
+console.log('JSON backup filename:', jsonDownload.suggestedFilename())
+await jsonDownload.saveAs('/tmp/backup-test.json')
 
-const [xlsxDownload] = await Promise.all([page.waitForEvent('download'), page.click('button:has-text("Excel")')])
-console.log('Excel download filename:', xlsxDownload.suggestedFilename())
+const [csvDownload] = await Promise.all([page.waitForEvent('download'), page.click('button:has-text("Export CSV")')])
+console.log('CSV export filename:', csvDownload.suggestedFilename())
+
+// --- Categories: add + delete a custom category ---
+await page.fill('input[placeholder="New category name"]', 'Pet Supplies')
+await page.getByRole('button', { name: 'Add', exact: true }).click()
+await page.waitForSelector('text=Category added', { timeout: 10000 })
+await shot('7-custom-category-added')
+await page.click('button[aria-label="Delete Pet Supplies"]')
+await page.waitForSelector('text=Category deleted', { timeout: 10000 })
 
 console.log('ERRORS:', JSON.stringify(errors, null, 2))
 console.log(errors.length === 0 ? 'SMOKE TEST PASSED' : 'SMOKE TEST HAD CONSOLE ERRORS')

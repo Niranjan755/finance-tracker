@@ -1,7 +1,9 @@
 import { create } from 'zustand'
 import { getDB } from '@/lib/db/client'
+import { todayISODate } from '@/lib/date'
 import { deleteFromStore, getAllFromStore, getFromStore, putInStore } from '@/lib/db/repo'
 import { getDefaultCategories } from '@/lib/db/seed/categories'
+import { seedDemoDataIntoDB } from '@/lib/db/seed/demoData'
 import { generateId } from '@/lib/id'
 import {
   createAccount,
@@ -20,6 +22,7 @@ import {
 } from '@/lib/finance/recurringOps'
 import { createTransaction, deleteTransaction, updateTransaction } from '@/lib/finance/transactionOps'
 import { createTransfer, deleteTransfer } from '@/lib/finance/transferOps'
+import { attachReceipt, removeReceipt } from '@/lib/finance/receiptOps'
 import type {
   Account,
   Budget,
@@ -76,6 +79,8 @@ interface FinanceState {
   editTransaction: (id: string, input: TransactionFormInput) => Promise<void>
   removeTransaction: (id: string) => Promise<void>
   duplicateTransaction: (id: string) => Promise<Transaction>
+  attachReceiptToTransaction: (transactionId: string, file: File) => Promise<void>
+  removeReceiptFromTransaction: (transactionId: string) => Promise<void>
 
   addTransfer: (input: TransferFormInput) => Promise<Transfer>
   removeTransfer: (id: string) => Promise<void>
@@ -97,6 +102,7 @@ interface FinanceState {
   updateSettings: (patch: Partial<Settings>) => Promise<void>
 
   clearAllData: () => Promise<void>
+  loadDemoData: () => Promise<void>
   replaceAllData: (data: {
     accounts: Account[]
     categories: Category[]
@@ -246,7 +252,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
       categoryId: existing.categoryId,
       type: existing.type,
       amountCents: existing.amountCents,
-      date: new Date().toISOString().slice(0, 10),
+      date: todayISODate(),
       merchant: existing.merchant,
       description: existing.description,
       notes: existing.notes,
@@ -254,6 +260,20 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
       location: existing.location,
     }
     return existing.type === 'expense' ? get().addExpense(input) : get().addIncome(input)
+  },
+
+  async attachReceiptToTransaction(transactionId, file) {
+    const receipt = await attachReceipt(transactionId, file)
+    set((s) => ({
+      transactions: s.transactions.map((t) => (t.id === transactionId ? { ...t, receiptId: receipt.id } : t)),
+    }))
+  },
+
+  async removeReceiptFromTransaction(transactionId) {
+    await removeReceipt(transactionId)
+    set((s) => ({
+      transactions: s.transactions.map((t) => (t.id === transactionId ? { ...t, receiptId: null } : t)),
+    }))
   },
 
   async addTransfer(input) {
@@ -401,6 +421,19 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
       budgets: [],
       categories,
     })
+  },
+
+  async loadDemoData() {
+    await seedDemoDataIntoDB()
+    const [accounts, categories, transactions, transfers, recurring, budgets] = await Promise.all([
+      getAllFromStore('accounts'),
+      getAllFromStore('categories'),
+      getAllFromStore('transactions'),
+      getAllFromStore('transfers'),
+      getAllFromStore('recurring'),
+      getAllFromStore('budgets'),
+    ])
+    set({ accounts, categories, transactions, transfers, recurring, budgets })
   },
 
   async replaceAllData(data) {
