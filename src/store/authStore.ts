@@ -11,7 +11,8 @@ interface AuthState {
   lastSyncedAt: string | null
   syncError: string | null
 
-  signInWithEmail: (email: string) => Promise<void>
+  signUp: (email: string, password: string) => Promise<void>
+  signIn: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
   setSyncStatus: (status: SyncStatus, error?: string | null) => void
   _init: () => void
@@ -27,9 +28,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   lastSyncedAt: null,
   syncError: null,
 
-  async signInWithEmail(email) {
+  async signUp(email, password) {
     if (!supabase) throw new Error('Cloud sync is not configured')
-    const { error } = await supabase.auth.signInWithOtp({ email })
+    const { error } = await supabase.auth.signUp({ email, password })
+    if (error) throw new Error(error.message)
+  },
+
+  async signIn(email, password) {
+    if (!supabase) throw new Error('Cloud sync is not configured')
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw new Error(error.message)
   },
 

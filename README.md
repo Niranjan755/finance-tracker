@@ -12,9 +12,14 @@ The app works fully offline out of the box. To sync your data across devices:
    ```bash
    cp .env.example .env
    ```
-4. Run `npm install && npm run dev`
-5. In the app, go to Settings → Account & Cloud Sync and sign in with a magic link
+4. In Supabase, go to Authentication → Settings and disable "Enable email confirmations" (email
+   sending isn't set up, so confirmation emails would otherwise block sign-up)
+5. Run `npm install && npm run dev`
+6. In the app, go to Settings → Account & Cloud Sync and create an account (any email + a
+   password of at least 6 characters — the email isn't verified)
 
-Once signed in, changes sync automatically across every device you're signed into on the same
-account. If you edit on two devices while both are offline at once, the device that syncs last
-wins — there's no merge across offline edits.
+Once signed in, changes sync automatically across every device signed into the same account. Each
+account's data is private to that account (enforced by Postgres row-level security), so multiple
+people can use the same deployment with their own separate accounts. If you edit on two devices
+while both are offline at once, the device that syncs last wins — there's no merge across offline
+edits.

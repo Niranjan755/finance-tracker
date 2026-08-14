@@ -59,25 +59,44 @@ export function SettingsPage() {
   const syncStatus = useAuthStore((s) => s.syncStatus)
   const lastSyncedAt = useAuthStore((s) => s.lastSyncedAt)
   const syncError = useAuthStore((s) => s.syncError)
-  const signInWithEmail = useAuthStore((s) => s.signInWithEmail)
+  const signUp = useAuthStore((s) => s.signUp)
+  const signIn = useAuthStore((s) => s.signIn)
   const signOut = useAuthStore((s) => s.signOut)
-  const [signInEmail, setSignInEmail] = useState('')
-  const [sendingLink, setSendingLink] = useState(false)
-  const [linkSent, setLinkSent] = useState(false)
+  const [authEmail, setAuthEmail] = useState('')
+  const [authPassword, setAuthPassword] = useState('')
+  const [authSubmitting, setAuthSubmitting] = useState(false)
 
-  async function handleSendMagicLink() {
-    if (!signInEmail.trim()) return
-    setSendingLink(true)
+  async function handleSignIn() {
+    if (!authEmail.trim() || !authPassword) return
+    setAuthSubmitting(true)
     try {
-      await signInWithEmail(signInEmail.trim())
-      setLinkSent(true)
-      toast.success('Check your email for a sign-in link')
+      await signIn(authEmail.trim(), authPassword)
+      toast.success('Signed in')
     } catch (error) {
-      toast.error('Unable to send sign-in link', {
+      toast.error('Unable to sign in', {
         description: error instanceof Error ? error.message : 'Unknown error',
       })
     } finally {
-      setSendingLink(false)
+      setAuthSubmitting(false)
+    }
+  }
+
+  async function handleCreateAccount() {
+    if (!authEmail.trim() || !authPassword) return
+    if (authPassword.length < 6) {
+      toast.error('Password must be at least 6 characters')
+      return
+    }
+    setAuthSubmitting(true)
+    try {
+      await signUp(authEmail.trim(), authPassword)
+      toast.success('Account created and signed in')
+    } catch (error) {
+      toast.error('Unable to create account', {
+        description: error instanceof Error ? error.message : 'Unknown error',
+      })
+    } finally {
+      setAuthSubmitting(false)
     }
   }
 
@@ -274,32 +293,45 @@ export function SettingsPage() {
               </p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="max-w-sm space-y-3">
               <p className="text-muted-foreground text-sm">
-                Sign in to automatically sync your data across all your devices.
+                Sign in to automatically sync your data across all your devices. Each account's
+                data is private to that account.
               </p>
-              <div className="flex max-w-sm flex-wrap gap-2">
+              <div className="space-y-2">
                 <Input
                   type="email"
-                  value={signInEmail}
-                  onChange={(e) => setSignInEmail(e.target.value)}
+                  value={authEmail}
+                  onChange={(e) => setAuthEmail(e.target.value)}
                   placeholder="you@example.com"
                 />
+                <Input
+                  type="password"
+                  value={authPassword}
+                  onChange={(e) => setAuthPassword(e.target.value)}
+                  placeholder="Password (min. 6 characters)"
+                />
+              </div>
+              <div className="flex flex-wrap gap-2">
                 <Button
                   variant="outline"
-                  onClick={handleSendMagicLink}
-                  disabled={sendingLink || !signInEmail.trim()}
+                  onClick={handleSignIn}
+                  disabled={authSubmitting || !authEmail.trim() || !authPassword}
+                  className="gap-1.5"
+                >
+                  <LogOut className="size-4 rotate-180" aria-hidden="true" />
+                  Sign in
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleCreateAccount}
+                  disabled={authSubmitting || !authEmail.trim() || !authPassword}
                   className="gap-1.5"
                 >
                   <Mail className="size-4" aria-hidden="true" />
-                  Send magic link
+                  Create account
                 </Button>
               </div>
-              {linkSent && (
-                <p className="text-muted-foreground text-xs">
-                  Check your email and click the link to finish signing in on this device.
-                </p>
-              )}
             </div>
           )}
         </Section>
