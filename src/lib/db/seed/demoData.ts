@@ -139,7 +139,9 @@ export async function generateDemoData(): Promise<{
       id: generateId('xfer'),
       fromAccountId: fromId,
       toAccountId: toId,
-      amountCents,
+      fromAmountCents: amountCents,
+      toAmountCents: amountCents,
+      exchangeRate: 1,
       date,
       description: isCreditCardPayment ? 'Credit card payment' : 'Transfer to savings',
       isCreditCardPayment,
@@ -301,8 +303,8 @@ export async function generateDemoData(): Promise<{
   for (const t of sortedTransfers) {
     const from = accountById.get(t.fromAccountId)!
     const to = accountById.get(t.toAccountId)!
-    from.balanceCents += isLiability(from.id) ? t.amountCents : -t.amountCents
-    to.balanceCents += isLiability(to.id) ? -t.amountCents : t.amountCents
+    from.balanceCents += isLiability(from.id) ? t.fromAmountCents : -t.fromAmountCents
+    to.balanceCents += isLiability(to.id) ? -t.toAmountCents : t.toAmountCents
   }
 
   const budgets: Budget[] = [

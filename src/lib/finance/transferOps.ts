@@ -6,14 +6,20 @@ import { assertPositiveAmount, creditDelta, debitDelta } from './math'
 export interface TransferInput {
   fromAccountId: string
   toAccountId: string
-  amountCents: number
+  fromAmountCents: number
+  toAmountCents: number
+  exchangeRate: number
   date: string
   description?: string
   isCreditCardPayment?: boolean
 }
 
 export async function createTransfer(input: TransferInput): Promise<Transfer> {
-  assertPositiveAmount(input.amountCents)
+  assertPositiveAmount(input.fromAmountCents)
+  assertPositiveAmount(input.toAmountCents)
+  if (input.exchangeRate <= 0) {
+    throw new Error('Exchange rate must be positive')
+  }
   if (input.fromAccountId === input.toAccountId) {
     throw new Error('Transfer source and destination accounts must be different')
   }
@@ -32,19 +38,21 @@ export async function createTransfer(input: TransferInput): Promise<Transfer> {
   const now = new Date().toISOString()
   const updatedFrom: Account = {
     ...fromAccount,
-    balanceCents: fromAccount.balanceCents + debitDelta(fromAccount.type, input.amountCents),
+    balanceCents: fromAccount.balanceCents + debitDelta(fromAccount.type, input.fromAmountCents),
     updatedAt: now,
   }
   const updatedTo: Account = {
     ...toAccount,
-    balanceCents: toAccount.balanceCents + creditDelta(toAccount.type, input.amountCents),
+    balanceCents: toAccount.balanceCents + creditDelta(toAccount.type, input.toAmountCents),
     updatedAt: now,
   }
   const transfer: Transfer = {
     id: generateId('xfer'),
     fromAccountId: input.fromAccountId,
     toAccountId: input.toAccountId,
-    amountCents: input.amountCents,
+    fromAmountCents: input.fromAmountCents,
+    toAmountCents: input.toAmountCents,
+    exchangeRate: input.exchangeRate,
     date: input.date,
     description: input.description ?? '',
     isCreditCardPayment: input.isCreditCardPayment ?? false,
@@ -80,7 +88,7 @@ export async function deleteTransfer(id: string): Promise<void> {
     writes.push(
       accountsStore.put({
         ...fromAccount,
-        balanceCents: fromAccount.balanceCents - debitDelta(fromAccount.type, existing.amountCents),
+        balanceCents: fromAccount.balanceCents - debitDelta(fromAccount.type, existing.fromAmountCents),
         updatedAt: now,
       }),
     )
@@ -89,7 +97,7 @@ export async function deleteTransfer(id: string): Promise<void> {
     writes.push(
       accountsStore.put({
         ...toAccount,
-        balanceCents: toAccount.balanceCents - creditDelta(toAccount.type, existing.amountCents),
+        balanceCents: toAccount.balanceCents - creditDelta(toAccount.type, existing.toAmountCents),
         updatedAt: now,
       }),
     )

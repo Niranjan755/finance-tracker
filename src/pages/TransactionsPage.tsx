@@ -130,7 +130,7 @@ export function TransactionsPage() {
       id: t.id,
       kind: 'transfer',
       date: t.date,
-      amountCents: t.amountCents,
+      amountCents: t.fromAmountCents,
       createdAt: t.createdAt,
       transfer: t,
     }))
@@ -176,7 +176,7 @@ export function TransactionsPage() {
         const haystack =
           row.kind === 'transaction'
             ? `${row.transaction.merchant} ${row.transaction.description} ${row.transaction.notes} ${row.transaction.tags.join(' ')} ${(row.transaction.amountCents / 100).toFixed(2)}`
-            : `${row.transfer.description} transfer ${(row.transfer.amountCents / 100).toFixed(2)}`
+            : `${row.transfer.description} transfer ${(row.transfer.fromAmountCents / 100).toFixed(2)} ${(row.transfer.toAmountCents / 100).toFixed(2)}`
         if (!haystack.toLowerCase().includes(q)) return false
       }
       return true

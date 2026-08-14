@@ -90,7 +90,7 @@ export function computeMonthlyStatement(
   const totalExpenseCents = expenseTransactions.reduce((sum, t) => sum + t.amountCents, 0)
   const totalTransfersCents = transfers
     .filter((t) => isDateInRange(t.date, bounds.startISO, bounds.endISO))
-    .reduce((sum, t) => sum + t.amountCents, 0)
+    .reduce((sum, t) => sum + t.fromAmountCents, 0)
 
   const closingBalanceCents = netWorthAsOf(accounts, transactions, bounds.endISO)
   const openingBalanceCents = closingBalanceCents - totalIncomeCents + totalExpenseCents
@@ -243,7 +243,7 @@ export function computeCashFlow(
     .reduce((s, t) => s + t.amountCents, 0)
   const transfersCents = transfers
     .filter((t) => isDateInRange(t.date, startISO, endISO))
-    .reduce((s, t) => s + t.amountCents, 0)
+    .reduce((s, t) => s + t.fromAmountCents, 0)
 
   return {
     moneyInCents,

@@ -69,8 +69,12 @@ export interface Transfer {
   id: string
   fromAccountId: string
   toAccountId: string
-  /** Always positive magnitude in integer cents. */
-  amountCents: number
+  /** Amount debited from source account in its currency (integer cents). */
+  fromAmountCents: number
+  /** Amount credited to destination account in its currency (integer cents). */
+  toAmountCents: number
+  /** Exchange rate applied (toAmount / fromAmount). Only used for cross-currency transfers. */
+  exchangeRate: number
   date: string
   description: string
   /** True when this transfer represents paying down a credit card balance. */

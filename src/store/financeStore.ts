@@ -55,7 +55,9 @@ export interface TransactionFormInput {
 export interface TransferFormInput {
   fromAccountId: string
   toAccountId: string
-  amountCents: number
+  fromAmountCents: number
+  toAmountCents: number
+  exchangeRate: number
   date: string
   description?: string
   isCreditCardPayment?: boolean

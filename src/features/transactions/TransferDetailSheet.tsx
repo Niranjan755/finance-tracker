@@ -65,7 +65,7 @@ export function TransferDetailSheet({ transfer, onClose }: TransferDetailSheetPr
                   </span>
                 </div>
                 <span className="text-sm font-medium text-red-600 dark:text-red-400">
-                  -{formatCurrency(transfer.amountCents, fromAccount?.currency)}
+                  -{formatCurrency(transfer.fromAmountCents, fromAccount?.currency)}
                 </span>
               </div>
               <div className="text-muted-foreground flex justify-center">
@@ -79,7 +79,7 @@ export function TransferDetailSheet({ transfer, onClose }: TransferDetailSheetPr
                   </span>
                 </div>
                 <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
-                  +{formatCurrency(transfer.amountCents, toAccount?.currency)}
+                  +{formatCurrency(transfer.toAmountCents, toAccount?.currency)}
                 </span>
               </div>
             </div>
@@ -93,6 +93,14 @@ export function TransferDetailSheet({ transfer, onClose }: TransferDetailSheetPr
                 <div className="flex items-start justify-between gap-4">
                   <dt className="text-muted-foreground">Description</dt>
                   <dd className="text-right">{transfer.description}</dd>
+                </div>
+              )}
+              {transfer.exchangeRate !== 1 && (
+                <div className="flex items-start justify-between gap-4">
+                  <dt className="text-muted-foreground">Exchange Rate</dt>
+                  <dd className="text-right">
+                    1 {fromAccount?.currency} = {transfer.exchangeRate.toFixed(4)} {toAccount?.currency}
+                  </dd>
                 </div>
               )}
             </dl>

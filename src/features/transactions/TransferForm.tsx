@@ -10,6 +10,7 @@ import { centsToInputValue, toCents } from '@/lib/money'
 import { todayISODate } from '@/lib/date'
 import type { Account, Transfer } from '@/types'
 import type { TransferFormInput } from '@/store/financeStore'
+import { useEffect } from 'react'
 
 interface TransferFormProps {
   accounts: Account[]
@@ -24,13 +25,16 @@ export function TransferForm({ accounts, transfer, onSubmit, onCancel }: Transfe
     handleSubmit,
     control,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<TransferFormValues>({
     resolver: zodResolver(transferFormSchema),
     defaultValues: {
       fromAccountId: transfer?.fromAccountId ?? '',
       toAccountId: transfer?.toAccountId ?? '',
-      amount: transfer ? centsToInputValue(transfer.amountCents) : '',
+      fromAmount: transfer ? centsToInputValue(transfer.fromAmountCents) : '',
+      toAmount: transfer ? centsToInputValue(transfer.toAmountCents) : '',
+      exchangeRate: transfer ? String(transfer.exchangeRate) : '1',
       date: transfer?.date ?? todayISODate(),
       description: transfer?.description ?? '',
     },
@@ -38,15 +42,36 @@ export function TransferForm({ accounts, transfer, onSubmit, onCancel }: Transfe
 
   const fromAccountId = watch('fromAccountId')
   const toAccountId = watch('toAccountId')
+  const fromAmount = watch('fromAmount')
+  const toAmount = watch('toAmount')
+  const exchangeRate = watch('exchangeRate')
+
+  const fromAccount = accounts.find((a) => a.id === fromAccountId)
   const toAccount = accounts.find((a) => a.id === toAccountId)
+
+  // Auto-calculate toAmount when fromAmount or exchangeRate changes
+  useEffect(() => {
+    if (fromAmount && exchangeRate) {
+      const calculatedTo = (parseFloat(fromAmount.replace(/,/g, '')) * parseFloat(exchangeRate)).toFixed(2)
+      if (calculatedTo !== toAmount.replace(/,/g, '')) {
+        setValue('toAmount', calculatedTo)
+      }
+    }
+  }, [fromAmount, exchangeRate, toAmount, setValue])
 
   return (
     <form
       onSubmit={handleSubmit(async (values) => {
+        const fromAmountCents = toCents(values.fromAmount)
+        const toAmountCents = toCents(values.toAmount)
+        const rate = parseFloat(values.exchangeRate)
+
         await onSubmit({
           fromAccountId: values.fromAccountId,
           toAccountId: values.toAccountId,
-          amountCents: toCents(values.amount),
+          fromAmountCents,
+          toAmountCents,
+          exchangeRate: rate,
           date: values.date,
           description: values.description,
           isCreditCardPayment: toAccount?.type === 'credit_card',
@@ -56,24 +81,7 @@ export function TransferForm({ accounts, transfer, onSubmit, onCancel }: Transfe
     >
       <FieldGroup>
         <Field>
-          <FieldLabel htmlFor="transfer-amount">Amount</FieldLabel>
-          <div className="relative">
-            <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2">
-              $
-            </span>
-            <Input
-              id="transfer-amount"
-              inputMode="decimal"
-              placeholder="0.00"
-              className="pl-6 text-lg font-medium"
-              {...register('amount')}
-            />
-          </div>
-          <FieldError errors={[errors.amount]} />
-        </Field>
-
-        <Field>
-          <FieldLabel>From</FieldLabel>
+          <FieldLabel>From Account</FieldLabel>
           <Controller
             name="fromAccountId"
             control={control}
@@ -90,12 +98,34 @@ export function TransferForm({ accounts, transfer, onSubmit, onCancel }: Transfe
           <FieldError errors={[errors.fromAccountId]} />
         </Field>
 
+        <Field>
+          <FieldLabel htmlFor="from-amount">
+            Send Amount {fromAccount && `(${fromAccount.currency})`}
+          </FieldLabel>
+          <div className="relative">
+            <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2">
+              {fromAccount?.currency === 'USD' && '$'}
+              {fromAccount?.currency === 'INR' && '₹'}
+              {fromAccount?.currency === 'EUR' && '€'}
+              {fromAccount?.currency === 'GBP' && '£'}
+            </span>
+            <Input
+              id="from-amount"
+              inputMode="decimal"
+              placeholder="0.00"
+              className="pl-6 text-lg font-medium"
+              {...register('fromAmount')}
+            />
+          </div>
+          <FieldError errors={[errors.fromAmount]} />
+        </Field>
+
         <div className="text-muted-foreground flex justify-center" aria-hidden="true">
           <ArrowDown className="size-4" />
         </div>
 
         <Field>
-          <FieldLabel>To</FieldLabel>
+          <FieldLabel>To Account</FieldLabel>
           <Controller
             name="toAccountId"
             control={control}
@@ -111,6 +141,47 @@ export function TransferForm({ accounts, transfer, onSubmit, onCancel }: Transfe
           />
           <FieldError errors={[errors.toAccountId]} />
         </Field>
+
+        <Field>
+          <FieldLabel htmlFor="to-amount">
+            Receive Amount {toAccount && `(${toAccount.currency})`}
+          </FieldLabel>
+          <div className="relative">
+            <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2">
+              {toAccount?.currency === 'USD' && '$'}
+              {toAccount?.currency === 'INR' && '₹'}
+              {toAccount?.currency === 'EUR' && '€'}
+              {toAccount?.currency === 'GBP' && '£'}
+            </span>
+            <Input
+              id="to-amount"
+              inputMode="decimal"
+              placeholder="0.00"
+              className="pl-6 text-lg font-medium"
+              {...register('toAmount')}
+            />
+          </div>
+          <FieldError errors={[errors.toAmount]} />
+        </Field>
+
+        {/* Exchange Rate Field */}
+        {fromAccount && toAccount && fromAccount.currency !== toAccount.currency && (
+          <Field>
+            <FieldLabel htmlFor="exchange-rate">
+              Exchange Rate ({fromAccount.currency} to {toAccount.currency})
+            </FieldLabel>
+            <p className="text-muted-foreground mb-2 text-sm">
+              1 {fromAccount.currency} = ? {toAccount.currency}
+            </p>
+            <Input
+              id="exchange-rate"
+              inputMode="decimal"
+              placeholder="1.0"
+              {...register('exchangeRate')}
+            />
+            <FieldError errors={[errors.exchangeRate]} />
+          </Field>
+        )}
 
         {toAccount?.type === 'credit_card' && (
           <p className="bg-muted/40 text-muted-foreground rounded-lg border px-3 py-2 text-xs">
@@ -129,7 +200,7 @@ export function TransferForm({ accounts, transfer, onSubmit, onCancel }: Transfe
             <FieldLabel htmlFor="transfer-description">Description (optional)</FieldLabel>
             <Input
               id="transfer-description"
-              placeholder="Savings deposit"
+              placeholder="e.g., Wire to India"
               {...register('description')}
             />
           </Field>

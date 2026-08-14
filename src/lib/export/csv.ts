@@ -44,7 +44,7 @@ export function buildTransactionExportRows(
       Merchant: t.description || 'Transfer',
       Category: '',
       Account: `${accountById.get(t.fromAccountId)?.name ?? '?'} -> ${accountById.get(t.toAccountId)?.name ?? '?'}`,
-      Amount: fromCents(t.amountCents),
+      Amount: fromCents(t.fromAmountCents),
       Notes: '',
       Tags: '',
     })

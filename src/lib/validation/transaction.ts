@@ -28,11 +28,21 @@ export const transferFormSchema = z
   .object({
     fromAccountId: z.string().min(1, 'Choose a source account'),
     toAccountId: z.string().min(1, 'Choose a destination account'),
-    amount: z
+    fromAmount: z
       .string()
       .trim()
       .min(1, 'Amount is required')
       .refine(isValidAmountString, 'Enter a valid positive amount'),
+    toAmount: z
+      .string()
+      .trim()
+      .min(1, 'Amount is required')
+      .refine(isValidAmountString, 'Enter a valid positive amount'),
+    exchangeRate: z
+      .string()
+      .trim()
+      .min(1, 'Exchange rate is required')
+      .refine((v) => !Number.isNaN(Number(v)) && Number(v) > 0, 'Enter a valid exchange rate'),
     date: z.string().min(1, 'Date is required'),
     description: z.string().trim().max(200, 'Keep it under 200 characters'),
   })

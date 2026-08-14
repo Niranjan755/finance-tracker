@@ -14,7 +14,9 @@ describe('createTransfer', () => {
     await createTransfer({
       fromAccountId: 'checking',
       toAccountId: 'savings',
-      amountCents: toCents('300'),
+      fromAmountCents: toCents('300'),
+      toAmountCents: toCents('300'),
+      exchangeRate: 1,
       date: '2026-08-14',
     })
 
@@ -29,7 +31,9 @@ describe('createTransfer', () => {
     await createTransfer({
       fromAccountId: 'checking',
       toAccountId: 'savings',
-      amountCents: toCents('300'),
+      fromAmountCents: toCents('300'),
+      toAmountCents: toCents('300'),
+      exchangeRate: 1,
       date: '2026-08-14',
     })
 
@@ -50,7 +54,9 @@ describe('createTransfer', () => {
     await createTransfer({
       fromAccountId: 'checking',
       toAccountId: 'visa',
-      amountCents: toCents('500'),
+      fromAmountCents: toCents('500'),
+      toAmountCents: toCents('500'),
+      exchangeRate: 1,
       date: '2026-08-14',
       isCreditCardPayment: true,
     })
@@ -67,7 +73,9 @@ describe('createTransfer', () => {
       createTransfer({
         fromAccountId: 'checking',
         toAccountId: 'checking',
-        amountCents: toCents('100'),
+        fromAmountCents: toCents('100'),
+        toAmountCents: toCents('100'),
+        exchangeRate: 1,
         date: '2026-08-14',
       }),
     ).rejects.toThrow()
@@ -80,7 +88,9 @@ describe('createTransfer', () => {
       createTransfer({
         fromAccountId: 'checking',
         toAccountId: 'savings',
-        amountCents: 0,
+        fromAmountCents: 0,
+        toAmountCents: 0,
+        exchangeRate: 1,
         date: '2026-08-14',
       }),
     ).rejects.toThrow()
@@ -94,7 +104,9 @@ describe('deleteTransfer', () => {
     const transfer = await createTransfer({
       fromAccountId: 'checking',
       toAccountId: 'savings',
-      amountCents: toCents('300'),
+      fromAmountCents: toCents('300'),
+      toAmountCents: toCents('300'),
+      exchangeRate: 1,
       date: '2026-08-14',
     })
 
