@@ -4,7 +4,20 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>finance-tracker</title>
+    <meta name="description" content="Track accounts, transactions, budgets, and net worth entirely on your device." />
+    <title>Finance Tracker</title>
+    <script>
+      (function () {
+        try {
+          var pref = localStorage.getItem('finance-tracker-theme') || 'system'
+          var resolved =
+            pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+              ? 'dark'
+              : 'light'
+          document.documentElement.classList.toggle('dark', resolved === 'dark')
+        } catch (e) {}
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

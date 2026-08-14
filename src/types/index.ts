@@ -22,6 +22,12 @@ export interface Account {
    *  for liabilities (credit cards) this is the amount owed. */
   balanceCents: number
   creditLimitCents: number | null
+  /** Credit cards only: the balance from the most recent statement. */
+  statementBalanceCents: number | null
+  /** Credit cards only: the minimum payment due. */
+  minimumPaymentCents: number | null
+  /** Credit cards only: ISO date the next payment is due. */
+  paymentDueDate: string | null
   currency: Currency
   icon: string
   color: string
