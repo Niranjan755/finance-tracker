@@ -5,7 +5,7 @@ let dbPromise: Promise<IDBPDatabase<FinanceDB>> | null = null
 
 export function getDB(): Promise<IDBPDatabase<FinanceDB>> {
   dbPromise ??= openDB<FinanceDB>(DB_NAME, DB_VERSION, {
-    upgrade(db) {
+    async upgrade(db, oldVersion, _newVersion, tx) {
       if (!db.objectStoreNames.contains('accounts')) {
         db.createObjectStore('accounts', { keyPath: 'id' })
       }
@@ -43,10 +43,33 @@ export function getDB(): Promise<IDBPDatabase<FinanceDB>> {
       if (!db.objectStoreNames.contains('settings')) {
         db.createObjectStore('settings', { keyPath: 'id' })
       }
+
+      // Migration from v1 to v2: Update transfer schema to support multi-currency
+      if (oldVersion < 2 && db.objectStoreNames.contains('transfers')) {
+        const transfersStore = tx.objectStore('transfers')
+        const allTransfers = await transfersStore.getAll()
+        
+        for (const oldTransfer of allTransfers) {
+          const transfer = oldTransfer as any
+          // Check if this is an old-format transfer (has amountCents but not fromAmountCents)
+          if ('amountCents' in transfer && !('fromAmountCents' in transfer)) {
+            const migratedTransfer = {
+              ...transfer,
+              fromAmountCents: transfer.amountCents,
+              toAmountCents: transfer.amountCents,
+              exchangeRate: 1,
+            }
+            delete migratedTransfer.amountCents
+            await transfersStore.put(migratedTransfer)
+          }
+        }
+      }
     },
   })
   return dbPromise
 }
+
+
 
 /** Test-only: closes the current connection so a subsequent deleteDatabase() doesn't block. */
 export async function closeDBConnection(): Promise<void> {

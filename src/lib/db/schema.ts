@@ -11,7 +11,7 @@ import type {
 } from '@/types'
 
 export const DB_NAME = 'finance-tracker'
-export const DB_VERSION = 1
+export const DB_VERSION = 2
 
 export interface FinanceDB extends DBSchema {
   accounts: {
