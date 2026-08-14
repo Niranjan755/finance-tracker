@@ -9,6 +9,7 @@ import { DashboardPage } from '@/pages/DashboardPage'
 import { TransactionsPage } from '@/pages/TransactionsPage'
 import { BudgetsPage } from '@/pages/BudgetsPage'
 import { UpcomingPage } from '@/pages/UpcomingPage'
+import { ReportsPage } from '@/pages/ReportsPage'
 import { useThemeSync } from '@/hooks/useThemeSync'
 import { useFinanceStore } from '@/store/financeStore'
 
@@ -67,6 +68,7 @@ function AppContent() {
         <Route path="/transactions" element={<TransactionsPage />} />
         <Route path="/budgets" element={<BudgetsPage />} />
         <Route path="/upcoming" element={<UpcomingPage />} />
+        <Route path="/reports" element={<ReportsPage />} />
       </Route>
     </Routes>
   )
