@@ -130,8 +130,7 @@ export function AccountDetailPage() {
         </div>
 
         <div className={`mt-5 text-3xl font-semibold tabular-nums ${isCreditCard ? 'text-red-600 dark:text-red-400' : ''}`}>
-          {isCreditCard ? '-' : ''}
-          {formatCurrency(account.balanceCents, account.currency)}
+          {formatCurrency(isCreditCard ? -account.balanceCents : account.balanceCents, account.currency)}
         </div>
 
         {isCreditCard && (

@@ -200,7 +200,11 @@ export function TransactionsPage() {
           />
           <PopoverContent align="end" className="w-80 space-y-3">
             <div className="grid grid-cols-2 gap-2">
-              <Select value={filters.type} onValueChange={(v) => updateFilter('type', (v ?? 'all') as Filters['type'])}>
+              <Select
+                value={filters.type}
+                onValueChange={(v) => updateFilter('type', (v ?? 'all') as Filters['type'])}
+                items={{ all: 'All Types', expense: 'Expense', income: 'Income', transfer: 'Transfer' }}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Type" />
                 </SelectTrigger>
@@ -211,7 +215,11 @@ export function TransactionsPage() {
                   <SelectItem value="transfer">Transfer</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={filters.accountId} onValueChange={(v) => updateFilter('accountId', v ?? 'all')}>
+              <Select
+                value={filters.accountId}
+                onValueChange={(v) => updateFilter('accountId', v ?? 'all')}
+                items={{ all: 'All Accounts', ...Object.fromEntries(accounts.map((a) => [a.id, a.name])) }}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Account" />
                 </SelectTrigger>
@@ -225,7 +233,11 @@ export function TransactionsPage() {
                 </SelectContent>
               </Select>
             </div>
-            <Select value={filters.categoryId} onValueChange={(v) => updateFilter('categoryId', v ?? 'all')}>
+            <Select
+              value={filters.categoryId}
+              onValueChange={(v) => updateFilter('categoryId', v ?? 'all')}
+              items={{ all: 'All Categories', ...Object.fromEntries(categories.map((c) => [c.id, c.name])) }}
+            >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Category" />
               </SelectTrigger>

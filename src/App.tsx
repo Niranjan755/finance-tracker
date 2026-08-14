@@ -7,6 +7,8 @@ import { AccountDetailPage } from '@/pages/AccountDetailPage'
 import { AccountsPage } from '@/pages/AccountsPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { TransactionsPage } from '@/pages/TransactionsPage'
+import { BudgetsPage } from '@/pages/BudgetsPage'
+import { UpcomingPage } from '@/pages/UpcomingPage'
 import { useThemeSync } from '@/hooks/useThemeSync'
 import { useFinanceStore } from '@/store/financeStore'
 
@@ -63,6 +65,8 @@ function AppContent() {
         <Route path="/accounts" element={<AccountsPage />} />
         <Route path="/accounts/:id" element={<AccountDetailPage />} />
         <Route path="/transactions" element={<TransactionsPage />} />
+        <Route path="/budgets" element={<BudgetsPage />} />
+        <Route path="/upcoming" element={<UpcomingPage />} />
       </Route>
     </Routes>
   )

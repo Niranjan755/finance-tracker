@@ -76,8 +76,7 @@ export function AccountCard({ account, onEdit, onDeactivate, onReactivate, onDel
       </div>
 
       <p className={`text-2xl font-semibold tabular-nums ${isCreditCard ? 'text-red-600 dark:text-red-400' : ''}`}>
-        {isCreditCard ? '-' : ''}
-        {formatCurrency(account.balanceCents, account.currency)}
+        {formatCurrency(isCreditCard ? -account.balanceCents : account.balanceCents, account.currency)}
       </p>
 
       {isCreditCard && (

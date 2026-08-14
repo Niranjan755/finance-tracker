@@ -11,6 +11,8 @@ import { cn } from '@/lib/utils'
 import { ACCOUNT_TYPES, ACCOUNT_TYPE_LABELS, accountFormSchema, type AccountFormValues } from '@/lib/validation/account'
 import type { Account } from '@/types'
 
+const CURRENCY_ITEMS = Object.fromEntries(CURRENCIES.map((c) => [c.code, `${c.code} - ${c.name}`]))
+
 interface AccountFormProps {
   account?: Account
   onSubmit: (values: AccountFormValues) => Promise<void>
@@ -72,7 +74,7 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
               name="type"
               control={control}
               render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
+                <Select value={field.value} onValueChange={field.onChange} items={ACCOUNT_TYPE_LABELS}>
                   <SelectTrigger id="acct-type" className="w-full">
                     <SelectValue />
                   </SelectTrigger>
@@ -101,7 +103,7 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
               name="currency"
               control={control}
               render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
+                <Select value={field.value} onValueChange={field.onChange} items={CURRENCY_ITEMS}>
                   <SelectTrigger id="acct-currency" className="w-full">
                     <SelectValue />
                   </SelectTrigger>

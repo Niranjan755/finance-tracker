@@ -18,82 +18,58 @@ await page.waitForSelector('text=Welcome to Finance Tracker')
 await page.click('text=Add an Account')
 await page.waitForURL('**/accounts')
 
-async function addAccount({ name, institution, type, balance, creditLimit }) {
-  await page.getByRole('button', { name: 'Add Account' }).first().click()
-  await page.waitForSelector('#acct-name')
-  await page.fill('#acct-name', name)
-  await page.fill('#acct-institution', institution)
-  if (type) {
-    await page.click('#acct-type')
-    await page.click(`[role="option"]:has-text("${type}")`)
-  }
-  if (creditLimit) {
-    await page.waitForSelector('#acct-limit')
-    await page.fill('#acct-limit', creditLimit)
-  }
-  await page.fill('#acct-balance', balance)
-  await page.locator('[role="dialog"]').getByRole('button', { name: 'Add Account' }).click()
-  await page.waitForSelector(`text=${name}`, { timeout: 10000 })
-}
+await page.getByRole('button', { name: 'Add Account' }).first().click()
+await page.waitForSelector('#acct-name')
+await page.fill('#acct-name', 'Chase Checking')
+await page.fill('#acct-balance', '3000')
+await page.locator('[role="dialog"]').getByRole('button', { name: 'Add Account' }).click()
+await page.waitForSelector('text=Chase Checking', { timeout: 10000 })
 
-async function addExpense({ account, category, merchant, amount }) {
-  await page.click('button:has-text("Add Transaction")')
-  await page.getByRole('menuitem', { name: 'Add Expense' }).click()
-  await page.waitForSelector('#expense-amount')
-  await page.fill('#expense-amount', amount)
-  await page.click(`[role="radiogroup"][aria-label="Paid with"] >> text=${account}`)
-  await page.click('#expense-category')
-  await page.waitForSelector('[role="option"]')
-  await page.click(`[role="option"]:has-text("${category}")`)
-  await page.fill('#expense-merchant', merchant)
-  await page.locator('[role="dialog"]').getByRole('button', { name: 'Save Expense' }).click()
-  await page.waitForSelector('text=Expense added', { timeout: 10000 })
-}
+// --- Budgets ---
+await page.goto('http://localhost:5173/budgets')
+await page.click('button:has-text("Add Budget")')
+await page.waitForSelector('#budget-category')
+await page.click('#budget-category')
+await page.click('[role="option"]:has-text("Food")')
+await page.fill('#budget-amount', '600')
+await page.locator('[role="dialog"]').getByRole('button', { name: 'Create Budget' }).click()
+await page.waitForSelector('text=Budget created', { timeout: 10000 })
+await shot('1-budget-created')
 
-async function addIncome({ account, category, merchant, amount }) {
-  await page.click('button:has-text("Add Transaction")')
-  await page.getByRole('menuitem', { name: 'Add Income' }).click()
-  await page.waitForSelector('#income-amount')
-  await page.fill('#income-amount', amount)
-  await page.click(`[role="radiogroup"][aria-label="Received into"] >> text=${account}`)
-  await page.click('#income-category')
-  await page.waitForSelector('[role="option"]')
-  await page.click(`[role="option"]:has-text("${category}")`)
-  await page.fill('#income-merchant', merchant)
-  await page.locator('[role="dialog"]').getByRole('button', { name: 'Save Income' }).click()
-  await page.waitForSelector('text=Income added', { timeout: 10000 })
-}
+// Add an expense in Food > Groceries to see the progress bar move.
+await page.click('button:has-text("Add Transaction")')
+await page.getByRole('menuitem', { name: 'Add Expense' }).click()
+await page.waitForSelector('#expense-amount')
+await page.fill('#expense-amount', '425')
+await page.click('[role="radiogroup"][aria-label="Paid with"] >> text=Chase Checking')
+await page.click('#expense-category')
+await page.click('[role="option"]:has-text("Groceries")')
+await page.fill('#expense-merchant', 'Whole Foods')
+await page.locator('[role="dialog"]').getByRole('button', { name: 'Save Expense' }).click()
+await page.waitForSelector('text=Expense added', { timeout: 10000 })
 
-await addAccount({ name: 'Chase Checking', institution: 'Chase', balance: '5000' })
-await addAccount({ name: 'Chase Sapphire', institution: 'Chase', type: 'Credit Card', balance: '0', creditLimit: '5000' })
+await page.goto('http://localhost:5173/budgets')
+await page.waitForSelector('text=$425.00')
+await shot('2-budget-progress')
 
-await addIncome({ account: 'Chase Checking', category: 'Salary', merchant: 'Employer Inc', amount: '4200' })
-await addExpense({ account: 'Chase Sapphire', category: 'Restaurants', merchant: 'Olive Garden', amount: '85.40' })
-await addExpense({ account: 'Chase Checking', category: 'Groceries', merchant: 'Whole Foods', amount: '120' })
-await addExpense({ account: 'Chase Checking', category: 'Rent', merchant: 'Landlord', amount: '2000' })
-await addExpense({ account: 'Chase Sapphire', category: 'Streaming', merchant: 'Netflix', amount: '22.99' })
+// --- Recurring / Upcoming ---
+await page.goto('http://localhost:5173/upcoming')
+await page.click('button:has-text("Add Recurring")')
+await page.waitForSelector('#rec-name')
+await page.fill('#rec-name', 'Rent')
+await page.fill('#rec-amount', '2000')
+await page.click('#rec-account')
+await page.locator('[role="option"]:visible', { hasText: 'Chase Checking' }).last().click()
+await page.click('#rec-category')
+await page.locator('[role="option"]:visible', { hasText: 'Rent' }).last().click()
+// Set start date to a few days from now so it shows as upcoming, not overdue.
+await page.fill('#rec-start', '2026-08-20')
+await page.locator('[role="dialog"]').getByRole('button', { name: 'Add Recurring Transaction' }).click()
+await page.waitForSelector('text=Recurring transaction added', { timeout: 10000 })
+await shot('3-recurring-added')
 
-await page.goto('http://localhost:5173/')
-await page.waitForSelector('text=Net Worth')
-await page.waitForSelector('text=Income vs Expenses')
-await page.waitForTimeout(800) // let recharts finish measuring/animating
-await shot('dashboard-with-charts')
-
-// Toggle date range and dark mode too, while we're here.
-await page.click('button:has-text("7D")')
-await page.waitForTimeout(500)
-await shot('dashboard-7d-range')
-
-await page.click('button[aria-label="Change theme"]')
-await page.getByRole('menuitem', { name: 'Dark' }).click()
-await page.waitForTimeout(400)
-await shot('dashboard-dark-mode')
-
-// Click a donut legend entry to confirm the category-filter link works.
-const breakdownCard = page.locator('text=Expense Breakdown').locator('..')
-await breakdownCard.getByRole('button', { name: /Food/ }).click()
-await page.waitForURL('**/transactions?category=**')
-await shot('transactions-filtered-by-category')
+const bodyText = await page.locator('body').innerText()
+console.log('UPCOMING PAGE TEXT SNAPSHOT:\n', bodyText)
 
 console.log('ERRORS:', JSON.stringify(errors, null, 2))
 console.log(errors.length === 0 ? 'SMOKE TEST PASSED' : 'SMOKE TEST HAD CONSOLE ERRORS')

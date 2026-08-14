@@ -21,8 +21,17 @@ export function CategorySelector({ categories, type, value, onChange, id }: Cate
     }))
   }, [categories, type])
 
+  const items = useMemo(() => {
+    const map: Record<string, string> = {}
+    for (const { parent, children } of groups) {
+      map[parent.id] = `${parent.name} (general)`
+      for (const child of children) map[child.id] = child.name
+    }
+    return map
+  }, [groups])
+
   return (
-    <Select value={value} onValueChange={(v) => onChange(v ?? '')}>
+    <Select value={value} onValueChange={(v) => onChange(v ?? '')} items={items}>
       <SelectTrigger id={id} className="w-full">
         <SelectValue placeholder="Choose a category" />
       </SelectTrigger>

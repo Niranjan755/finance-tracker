@@ -20,6 +20,9 @@ interface MoneyTextProps {
 
 /** Renders an amount with color AND an explicit sign, so meaning never depends on color alone. */
 export function MoneyText({ cents, kind = 'neutral', currency = 'USD', signed = true, className }: MoneyTextProps) {
-  const text = signed ? formatSignedCurrency(cents, kind, currency) : formatCurrency(Math.abs(cents), currency)
-  return <span className={cn('tabular-nums', KIND_CLASS[kind], className)}>{text}</span>
+  // signed=false means "no forced leading +/-", not "hide a real negative" - formatCurrency
+  // already renders negative amounts with a minus sign, so never Math.abs() here.
+  const text = signed ? formatSignedCurrency(cents, kind, currency) : formatCurrency(cents, currency)
+  const effectiveKind = kind === 'neutral' && cents < 0 ? 'expense' : kind
+  return <span className={cn('tabular-nums', KIND_CLASS[effectiveKind], className)}>{text}</span>
 }

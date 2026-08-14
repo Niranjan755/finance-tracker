@@ -211,8 +211,7 @@ export function DashboardPage() {
                     </p>
                   </div>
                   <span className={`text-sm font-medium tabular-nums ${isLiability ? 'text-red-600 dark:text-red-400' : ''}`}>
-                    {isLiability ? '-' : ''}
-                    {formatCurrency(account.balanceCents, account.currency)}
+                    {formatCurrency(isLiability ? -account.balanceCents : account.balanceCents, account.currency)}
                   </span>
                 </button>
               )
