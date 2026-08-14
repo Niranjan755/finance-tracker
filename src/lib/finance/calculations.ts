@@ -1,9 +1,10 @@
 import { isDateInRange, type MonthBounds } from '@/lib/date'
-import { convertCentsToCurrency, percentOf } from '@/lib/money'
+import { percentOf } from '@/lib/money'
 import type { Account, Budget, Category, Currency, Transaction, Transfer } from '@/types'
 import { isLiabilityAccountType } from './math'
 
-export interface AccountTotals {
+export interface CurrencyTotals {
+  currency: Currency
   totalAssetsCents: number
   totalLiabilitiesCents: number
   netWorthCents: number
@@ -11,12 +12,27 @@ export interface AccountTotals {
   creditCardDebtCents: number
 }
 
+export interface AccountTotals {
+  totalAssetsCents: number
+  totalLiabilitiesCents: number
+  netWorthCents: number
+  availableCashCents: number
+  creditCardDebtCents: number
+  byCurrency: Record<Currency, CurrencyTotals>
+}
+
 const LIQUID_ASSET_TYPES: Account['type'][] = ['checking', 'savings', 'cash', 'debit_card']
 
-export function computeAccountTotals(
-  accounts: Account[],
-  baseCurrency: Currency = 'USD',
-): AccountTotals {
+export function computeAccountTotals(accounts: Account[]): AccountTotals {
+  const byCurrency = {
+    USD: { currency: 'USD', totalAssetsCents: 0, totalLiabilitiesCents: 0, netWorthCents: 0, availableCashCents: 0, creditCardDebtCents: 0 },
+    INR: { currency: 'INR', totalAssetsCents: 0, totalLiabilitiesCents: 0, netWorthCents: 0, availableCashCents: 0, creditCardDebtCents: 0 },
+    EUR: { currency: 'EUR', totalAssetsCents: 0, totalLiabilitiesCents: 0, netWorthCents: 0, availableCashCents: 0, creditCardDebtCents: 0 },
+    GBP: { currency: 'GBP', totalAssetsCents: 0, totalLiabilitiesCents: 0, netWorthCents: 0, availableCashCents: 0, creditCardDebtCents: 0 },
+    CAD: { currency: 'CAD', totalAssetsCents: 0, totalLiabilitiesCents: 0, netWorthCents: 0, availableCashCents: 0, creditCardDebtCents: 0 },
+    AUD: { currency: 'AUD', totalAssetsCents: 0, totalLiabilitiesCents: 0, netWorthCents: 0, availableCashCents: 0, creditCardDebtCents: 0 },
+  } satisfies Record<Currency, CurrencyTotals>
+
   let totalAssets = 0
   let totalLiabilities = 0
   let availableCash = 0
@@ -24,25 +40,37 @@ export function computeAccountTotals(
 
   for (const account of accounts) {
     if (!account.isActive) continue
-    const normalizedBalance = convertCentsToCurrency(account.balanceCents, account.currency, baseCurrency)
+    const bucket = byCurrency[account.currency]
+
     if (isLiabilityAccountType(account.type)) {
-      totalLiabilities += normalizedBalance
-      if (account.type === 'credit_card') creditCardDebt += normalizedBalance
+      bucket.totalLiabilitiesCents += account.balanceCents
+      totalLiabilities += account.balanceCents
+      if (account.type === 'credit_card') {
+        bucket.creditCardDebtCents += account.balanceCents
+        creditCardDebt += account.balanceCents
+      }
     } else {
-      totalAssets += normalizedBalance
+      bucket.totalAssetsCents += account.balanceCents
+      totalAssets += account.balanceCents
       if (LIQUID_ASSET_TYPES.includes(account.type)) {
-        availableCash += normalizedBalance
+        bucket.availableCashCents += account.balanceCents
+        availableCash += account.balanceCents
       }
     }
+
+    bucket.netWorthCents = bucket.totalAssetsCents - bucket.totalLiabilitiesCents
   }
 
-  return {
+  const totals = {
     totalAssetsCents: totalAssets,
     totalLiabilitiesCents: totalLiabilities,
     netWorthCents: totalAssets - totalLiabilities,
     availableCashCents: availableCash,
     creditCardDebtCents: creditCardDebt,
+    byCurrency,
   }
+
+  return totals
 }
 
 /**
@@ -55,18 +83,12 @@ export function netWorthAsOf(
   accounts: Account[],
   transactions: Transaction[],
   asOfISO: string,
-  baseCurrency: Currency = 'USD',
 ): number {
-  const current = computeAccountTotals(accounts, baseCurrency).netWorthCents
-  const accountById = new Map(accounts.map((a) => [a.id, a]))
+  const current = computeAccountTotals(accounts).netWorthCents
   let adjustment = 0
   for (const t of transactions) {
     if (t.date > asOfISO) {
-      const account = accountById.get(t.accountId)
-      const normalizedAmount = account
-        ? convertCentsToCurrency(t.amountCents, account.currency, baseCurrency)
-        : t.amountCents
-      adjustment += t.type === 'income' ? -normalizedAmount : normalizedAmount
+      adjustment += t.type === 'income' ? -t.amountCents : t.amountCents
     }
   }
   return current + adjustment

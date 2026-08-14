@@ -27,7 +27,6 @@ import type { AccountFormValues } from '@/lib/validation/account'
 
 export function AccountsPage() {
   const accounts = useFinanceStore((s) => s.accounts)
-  const settings = useFinanceStore((s) => s.settings)
   const addAccount = useFinanceStore((s) => s.addAccount)
   const updateAccount = useFinanceStore((s) => s.updateAccount)
   const removeAccount = useFinanceStore((s) => s.removeAccount)
@@ -36,7 +35,10 @@ export function AccountsPage() {
   const [editingAccount, setEditingAccount] = useState<Account | undefined>(undefined)
   const [deletingAccount, setDeletingAccount] = useState<Account | null>(null)
 
-  const totals = computeAccountTotals(accounts, settings.currency)
+  const totals = computeAccountTotals(accounts)
+  const totalsByCurrency = Object.values(totals.byCurrency).filter(
+    (group) => group.totalAssetsCents > 0 || group.totalLiabilitiesCents > 0,
+  )
   const liquid = accounts.filter((a) => a.type !== 'credit_card')
   const creditCards = accounts.filter((a) => a.type === 'credit_card')
 
@@ -124,36 +126,50 @@ export function AccountsPage() {
 
       {accounts.length > 0 && (
         <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <Card className="p-4">
-            <p className="text-muted-foreground text-xs font-medium">Total Assets</p>
-            <MoneyText
-              cents={totals.totalAssetsCents}
-              kind="neutral"
-              signed={false}
-              currency={settings.currency}
-              className="text-xl font-semibold"
-            />
-          </Card>
-          <Card className="p-4">
-            <p className="text-muted-foreground text-xs font-medium">Total Liabilities</p>
-            <MoneyText
-              cents={totals.totalLiabilitiesCents}
-              kind="neutral"
-              signed={false}
-              currency={settings.currency}
-              className="text-xl font-semibold"
-            />
-          </Card>
-          <Card className="p-4">
-            <p className="text-muted-foreground text-xs font-medium">Net Worth</p>
-            <MoneyText
-              cents={totals.netWorthCents}
-              kind="neutral"
-              signed={false}
-              currency={settings.currency}
-              className="text-xl font-semibold"
-            />
-          </Card>
+          {totalsByCurrency.length > 0 ? (
+            totalsByCurrency.map((group) => (
+              <Card key={group.currency} className="p-4">
+                <p className="text-muted-foreground text-xs font-medium">{group.currency} Net Worth</p>
+                <MoneyText
+                  cents={group.netWorthCents}
+                  kind="neutral"
+                  signed={false}
+                  currency={group.currency}
+                  className="text-xl font-semibold"
+                />
+              </Card>
+            ))
+          ) : (
+            <>
+              <Card className="p-4">
+                <p className="text-muted-foreground text-xs font-medium">Total Assets</p>
+                <MoneyText
+                  cents={totals.totalAssetsCents}
+                  kind="neutral"
+                  signed={false}
+                  className="text-xl font-semibold"
+                />
+              </Card>
+              <Card className="p-4">
+                <p className="text-muted-foreground text-xs font-medium">Total Liabilities</p>
+                <MoneyText
+                  cents={totals.totalLiabilitiesCents}
+                  kind="neutral"
+                  signed={false}
+                  className="text-xl font-semibold"
+                />
+              </Card>
+              <Card className="p-4">
+                <p className="text-muted-foreground text-xs font-medium">Net Worth</p>
+                <MoneyText
+                  cents={totals.netWorthCents}
+                  kind="neutral"
+                  signed={false}
+                  className="text-xl font-semibold"
+                />
+              </Card>
+            </>
+          )}
         </div>
       )}
 
