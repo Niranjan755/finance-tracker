@@ -52,7 +52,11 @@ function tryParseDate(raw: string): string | null {
   if (isoMatch) {
     const [, y, m, d] = isoMatch
     const date = new Date(Number(y), Number(m) - 1, Number(d))
-    if (date.getFullYear() === Number(y) && date.getMonth() === Number(m) - 1 && date.getDate() === Number(d)) {
+    if (
+      date.getFullYear() === Number(y) &&
+      date.getMonth() === Number(m) - 1 &&
+      date.getDate() === Number(d)
+    ) {
       return trimmed
     }
     return null
@@ -122,9 +126,15 @@ export function validateImportRows(
       return { rowIndex, valid: false, error: 'No account selected' }
     }
 
-    const matchedCategory = rawCategory ? categoryByName.get(rawCategory.trim().toLowerCase()) : undefined
-    const fallbackCategoryId = categories.find((c) => c.type === type && c.id === (type === 'expense' ? 'cat_exp_other' : 'cat_inc_other-income'))?.id
-    const categoryId = matchedCategory?.id ?? fallbackCategoryId ?? categories.find((c) => c.type === type)?.id
+    const matchedCategory = rawCategory
+      ? categoryByName.get(rawCategory.trim().toLowerCase())
+      : undefined
+    const fallbackCategoryId = categories.find(
+      (c) =>
+        c.type === type && c.id === (type === 'expense' ? 'cat_exp_other' : 'cat_inc_other-income'),
+    )?.id
+    const categoryId =
+      matchedCategory?.id ?? fallbackCategoryId ?? categories.find((c) => c.type === type)?.id
 
     if (!categoryId) {
       return { rowIndex, valid: false, error: 'No matching category found' }

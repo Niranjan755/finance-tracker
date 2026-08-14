@@ -10,7 +10,11 @@ export interface DateRange {
   endISO: string
 }
 
-export function rangeFromPreset(preset: DateRangePreset, today = new Date(), custom?: DateRange): DateRange {
+export function rangeFromPreset(
+  preset: DateRangePreset,
+  today = new Date(),
+  custom?: DateRange,
+): DateRange {
   if (preset === 'custom' && custom) return custom
   const end = startOfDay(today)
   const days: Record<Exclude<DateRangePreset, 'custom'>, number> = {
@@ -66,13 +70,20 @@ export interface SpendingTrendPoint {
 }
 
 /** Daily spending total across the given date range (inclusive). */
-export function computeSpendingTrend(transactions: Transaction[], range: DateRange): SpendingTrendPoint[] {
+export function computeSpendingTrend(
+  transactions: Transaction[],
+  range: DateRange,
+): SpendingTrendPoint[] {
   const start = parseISODate(range.startISO)
   const end = parseISODate(range.endISO)
   const dayCount = Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1
   const points: SpendingTrendPoint[] = Array.from({ length: Math.max(dayCount, 0) }, (_, i) => {
     const d = addDays(start, i)
-    return { dateISO: toISODate(d), label: format(d, dayCount > 60 ? 'MMM d' : 'MMM d'), expenseCents: 0 }
+    return {
+      dateISO: toISODate(d),
+      label: format(d, dayCount > 60 ? 'MMM d' : 'MMM d'),
+      expenseCents: 0,
+    }
   })
   const byDate = new Map(points.map((p) => [p.dateISO, p]))
   for (const t of transactions) {
@@ -134,7 +145,11 @@ export function computeAccountBalanceTrend(
     for (const account of accounts) {
       balances[account.id] = balanceAsOf(account, transactions, clampedISO)
     }
-    points.push({ monthKey: format(monthDate, 'yyyy-MM'), label: format(monthDate, 'MMM yyyy'), balances })
+    points.push({
+      monthKey: format(monthDate, 'yyyy-MM'),
+      label: format(monthDate, 'MMM yyyy'),
+      balances,
+    })
   }
   return points
 }
@@ -146,7 +161,14 @@ function balanceAsOf(account: Account, transactions: Transaction[], asOfISO: str
     if (t.date <= asOfISO) continue
     // Roll back transactions that happened after the as-of date.
     const isLiability = account.type === 'credit_card'
-    const delta = t.type === 'expense' ? (isLiability ? t.amountCents : -t.amountCents) : isLiability ? -t.amountCents : t.amountCents
+    const delta =
+      t.type === 'expense'
+        ? isLiability
+          ? t.amountCents
+          : -t.amountCents
+        : isLiability
+          ? -t.amountCents
+          : t.amountCents
     balance -= delta
   }
   return balance

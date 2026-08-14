@@ -40,7 +40,9 @@ export async function attachReceipt(transactionId: string, file: File): Promise<
 
   await Promise.all([
     tx.objectStore('receipts').put(receipt),
-    tx.objectStore('transactions').put({ ...transaction, receiptId: receipt.id, updatedAt: new Date().toISOString() }),
+    tx
+      .objectStore('transactions')
+      .put({ ...transaction, receiptId: receipt.id, updatedAt: new Date().toISOString() }),
     tx.done,
   ])
 
@@ -55,7 +57,9 @@ export async function removeReceipt(transactionId: string): Promise<void> {
 
   await Promise.all([
     tx.objectStore('receipts').delete(transaction.receiptId),
-    tx.objectStore('transactions').put({ ...transaction, receiptId: null, updatedAt: new Date().toISOString() }),
+    tx
+      .objectStore('transactions')
+      .put({ ...transaction, receiptId: null, updatedAt: new Date().toISOString() }),
     tx.done,
   ])
 }

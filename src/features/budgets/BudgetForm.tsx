@@ -3,7 +3,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { budgetFormSchema, type BudgetFormValues } from '@/lib/validation/budget'
 import { centsToInputValue, toCents } from '@/lib/money'
 import type { Budget, Category } from '@/types'
@@ -16,9 +22,17 @@ interface BudgetFormProps {
   onCancel: () => void
 }
 
-export function BudgetForm({ categories, budget, usedCategoryIds, onSubmit, onCancel }: BudgetFormProps) {
+export function BudgetForm({
+  categories,
+  budget,
+  usedCategoryIds,
+  onSubmit,
+  onCancel,
+}: BudgetFormProps) {
   const expenseCategories = categories.filter((c) => c.type === 'expense')
-  const availableCategories = expenseCategories.filter((c) => c.id === budget?.categoryId || !usedCategoryIds.includes(c.id))
+  const availableCategories = expenseCategories.filter(
+    (c) => c.id === budget?.categoryId || !usedCategoryIds.includes(c.id),
+  )
 
   const {
     register,
@@ -72,8 +86,16 @@ export function BudgetForm({ categories, budget, usedCategoryIds, onSubmit, onCa
         <Field>
           <FieldLabel htmlFor="budget-amount">Monthly Budget</FieldLabel>
           <div className="relative">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-            <Input id="budget-amount" inputMode="decimal" placeholder="0.00" className="pl-6" {...register('amount')} />
+            <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2">
+              $
+            </span>
+            <Input
+              id="budget-amount"
+              inputMode="decimal"
+              placeholder="0.00"
+              className="pl-6"
+              {...register('amount')}
+            />
           </div>
           <FieldError errors={[errors.amount]} />
         </Field>

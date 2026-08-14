@@ -25,7 +25,11 @@ export const useUIStore = create<UIState>((set) => ({
   addTransactionDefaultType: 'expense',
   addTransactionDefaultAccountId: null,
   openAddTransaction: (type = 'expense', accountId) =>
-    set({ addTransactionOpen: true, addTransactionDefaultType: type, addTransactionDefaultAccountId: accountId ?? null }),
+    set({
+      addTransactionOpen: true,
+      addTransactionDefaultType: type,
+      addTransactionDefaultAccountId: accountId ?? null,
+    }),
   closeAddTransaction: () => set({ addTransactionOpen: false }),
 
   editTransactionId: null,

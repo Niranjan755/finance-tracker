@@ -69,10 +69,15 @@ export function AccountDetailPage() {
       lastFour: values.lastFour,
       creditLimitCents: values.type === 'credit_card' ? toCents(values.creditLimit) : null,
       statementBalanceCents:
-        values.type === 'credit_card' && values.statementBalance ? toCents(values.statementBalance) : null,
+        values.type === 'credit_card' && values.statementBalance
+          ? toCents(values.statementBalance)
+          : null,
       minimumPaymentCents:
-        values.type === 'credit_card' && values.minimumPayment ? toCents(values.minimumPayment) : null,
-      paymentDueDate: values.type === 'credit_card' && values.paymentDueDate ? values.paymentDueDate : null,
+        values.type === 'credit_card' && values.minimumPayment
+          ? toCents(values.minimumPayment)
+          : null,
+      paymentDueDate:
+        values.type === 'credit_card' && values.paymentDueDate ? values.paymentDueDate : null,
       currency: values.currency,
       icon: values.icon,
       color: values.color,
@@ -96,7 +101,10 @@ export function AccountDetailPage() {
 
   return (
     <div>
-      <Link to="/accounts" className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+      <Link
+        to="/accounts"
+        className="text-muted-foreground hover:text-foreground mb-4 inline-flex items-center gap-1.5 text-sm"
+      >
         <ArrowLeft className="size-4" aria-hidden="true" />
         Back to Accounts
       </Link>
@@ -104,22 +112,31 @@ export function AccountDetailPage() {
       <Card className="mb-6 p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex size-12 items-center justify-center rounded-xl text-white" style={{ backgroundColor: account.color }}>
+            <div
+              className="flex size-12 items-center justify-center rounded-xl text-white"
+              style={{ backgroundColor: account.color }}
+            >
               <Icon className="size-6" aria-hidden="true" />
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
                 {account.institution || ACCOUNT_TYPE_LABELS[account.type]}
               </p>
               <h2 className="text-lg font-semibold">{account.name}</h2>
-              <p className="text-xs text-muted-foreground">
-                {ACCOUNT_TYPE_LABELS[account.type]} {account.lastFour && `· ••••${account.lastFour}`}
+              <p className="text-muted-foreground text-xs">
+                {ACCOUNT_TYPE_LABELS[account.type]}{' '}
+                {account.lastFour && `· ••••${account.lastFour}`}
                 {!account.isActive && ' · Inactive'}
               </p>
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setEditOpen(true)} className="gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setEditOpen(true)}
+              className="gap-1.5"
+            >
               <Pencil className="size-3.5" aria-hidden="true" />
               Edit
             </Button>
@@ -129,8 +146,13 @@ export function AccountDetailPage() {
           </div>
         </div>
 
-        <div className={`mt-5 text-3xl font-semibold tabular-nums ${isCreditCard ? 'text-red-600 dark:text-red-400' : ''}`}>
-          {formatCurrency(isCreditCard ? -account.balanceCents : account.balanceCents, account.currency)}
+        <div
+          className={`mt-5 text-3xl font-semibold tabular-nums ${isCreditCard ? 'text-red-600 dark:text-red-400' : ''}`}
+        >
+          {formatCurrency(
+            isCreditCard ? -account.balanceCents : account.balanceCents,
+            account.currency,
+          )}
         </div>
 
         {isCreditCard && (
@@ -140,19 +162,33 @@ export function AccountDetailPage() {
               <Stat label="Available Credit" value={formatCurrency(available, account.currency)} />
               <Stat
                 label="Statement Balance"
-                value={account.statementBalanceCents != null ? formatCurrency(account.statementBalanceCents, account.currency) : '-'}
+                value={
+                  account.statementBalanceCents != null
+                    ? formatCurrency(account.statementBalanceCents, account.currency)
+                    : '-'
+                }
               />
               <Stat
                 label="Minimum Payment"
-                value={account.minimumPaymentCents != null ? formatCurrency(account.minimumPaymentCents, account.currency) : '-'}
+                value={
+                  account.minimumPaymentCents != null
+                    ? formatCurrency(account.minimumPaymentCents, account.currency)
+                    : '-'
+                }
               />
             </div>
             <div>
               <Progress
                 value={Math.min(utilization, 100)}
-                className={utilization > 90 ? '[&>div]:bg-red-500' : utilization > 75 ? '[&>div]:bg-amber-500' : ''}
+                className={
+                  utilization > 90
+                    ? '[&>div]:bg-red-500'
+                    : utilization > 75
+                      ? '[&>div]:bg-amber-500'
+                      : ''
+                }
               />
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="text-muted-foreground mt-1 text-xs">
                 {utilization.toFixed(1)}% utilization
                 {account.paymentDueDate && ` · Due ${formatDisplayDate(account.paymentDueDate)}`}
               </p>
@@ -160,12 +196,18 @@ export function AccountDetailPage() {
           </div>
         )}
 
-        {account.notes && <p className="mt-4 border-t pt-4 text-sm text-muted-foreground">{account.notes}</p>}
+        {account.notes && (
+          <p className="text-muted-foreground mt-4 border-t pt-4 text-sm">{account.notes}</p>
+        )}
       </Card>
 
-      <h3 className="mb-3 text-sm font-medium text-muted-foreground">Transactions</h3>
+      <h3 className="text-muted-foreground mb-3 text-sm font-medium">Transactions</h3>
       {accountTransactions.length === 0 ? (
-        <EmptyState icon={Receipt} title="No transactions yet" description="Transactions for this account will show up here." />
+        <EmptyState
+          icon={Receipt}
+          title="No transactions yet"
+          description="Transactions for this account will show up here."
+        />
       ) : (
         <Card className="divide-y p-1">
           {accountTransactions.map((t) => (
@@ -186,7 +228,11 @@ export function AccountDetailPage() {
           <DialogHeader>
             <DialogTitle>Edit Account</DialogTitle>
           </DialogHeader>
-          <AccountForm account={account} onSubmit={handleSubmit} onCancel={() => setEditOpen(false)} />
+          <AccountForm
+            account={account}
+            onSubmit={handleSubmit}
+            onCancel={() => setEditOpen(false)}
+          />
         </DialogContent>
       </Dialog>
 
@@ -195,7 +241,8 @@ export function AccountDetailPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {account.name}?</AlertDialogTitle>
             <AlertDialogDescription>
-              This can't be undone. Accounts with transaction history can't be deleted - deactivate them instead.
+              This can't be undone. Accounts with transaction history can't be deleted - deactivate
+              them instead.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -211,7 +258,7 @@ export function AccountDetailPage() {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="text-muted-foreground text-xs">{label}</p>
       <p className="text-sm font-medium tabular-nums">{value}</p>
     </div>
   )

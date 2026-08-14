@@ -60,7 +60,11 @@ describe('projectOccurrences', () => {
   })
 
   it('returns nothing outside the horizon', () => {
-    const result = projectOccurrences(makeRecurring({ nextRunDate: '2027-01-01' }), '2026-08-14', 30)
+    const result = projectOccurrences(
+      makeRecurring({ nextRunDate: '2027-01-01' }),
+      '2026-08-14',
+      30,
+    )
     expect(result).toHaveLength(0)
   })
 })

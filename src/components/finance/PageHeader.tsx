@@ -9,7 +9,7 @@ export function PageHeader({ title, description, actions }: PageHeaderProps) {
     <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">{title}</h2>
-        {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
+        {description && <p className="text-muted-foreground mt-1 text-sm">{description}</p>}
       </div>
       {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
     </div>

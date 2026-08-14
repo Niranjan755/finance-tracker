@@ -27,7 +27,10 @@ export function DateRangeSelector({ value, onChange }: DateRangeSelectorProps) {
           variant="ghost"
           size="sm"
           onClick={() => onChange(preset.value)}
-          className={cn('h-7 px-2.5 text-xs', value === preset.value && 'bg-muted font-medium text-foreground')}
+          className={cn(
+            'h-7 px-2.5 text-xs',
+            value === preset.value && 'bg-muted text-foreground font-medium',
+          )}
         >
           {preset.label}
         </Button>

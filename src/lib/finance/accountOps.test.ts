@@ -27,7 +27,11 @@ describe('createAccount', () => {
 
 describe('updateAccountMeta', () => {
   it('updates metadata without ever touching balanceCents', async () => {
-    const account = await seedAccount({ id: 'checking', name: 'Old Name', balanceCents: toCents('900') })
+    const account = await seedAccount({
+      id: 'checking',
+      name: 'Old Name',
+      balanceCents: toCents('900'),
+    })
 
     const updated = await updateAccountMeta(account.id, { name: 'New Name' })
 

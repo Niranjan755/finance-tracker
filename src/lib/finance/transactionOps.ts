@@ -66,10 +66,7 @@ export async function createTransaction(input: TransactionInput): Promise<Transa
   return transaction
 }
 
-export async function updateTransaction(
-  id: string,
-  input: TransactionInput,
-): Promise<Transaction> {
+export async function updateTransaction(id: string, input: TransactionInput): Promise<Transaction> {
   assertPositiveAmount(input.amountCents)
   const db = await getDB()
   const tx = db.transaction(['accounts', 'transactions'], 'readwrite')

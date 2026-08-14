@@ -1,6 +1,13 @@
 import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { ArrowDownCircle, ArrowLeftRight, ArrowUpCircle, MoreHorizontal, Plus, type LucideIcon } from 'lucide-react'
+import {
+  ArrowDownCircle,
+  ArrowLeftRight,
+  ArrowUpCircle,
+  MoreHorizontal,
+  Plus,
+  type LucideIcon,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer'
 import { useUIStore } from '@/store/uiStore'
@@ -17,11 +24,17 @@ export function BottomNav() {
     <>
       <nav
         aria-label="Primary"
-        className="fixed inset-x-0 bottom-0 z-40 flex h-16 items-stretch border-t bg-background/95 backdrop-blur md:hidden"
+        className="bg-background/95 fixed inset-x-0 bottom-0 z-40 flex h-16 items-stretch border-t backdrop-blur md:hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         {MOBILE_PRIMARY_NAV.slice(0, 2).map((item) => (
-          <BottomNavLink key={item.to} to={item.to} label={item.label} icon={item.icon} end={item.to === '/'} />
+          <BottomNavLink
+            key={item.to}
+            to={item.to}
+            label={item.label}
+            icon={item.icon}
+            end={item.to === '/'}
+          />
         ))}
 
         <div className="flex flex-1 items-center justify-center">
@@ -29,7 +42,7 @@ export function BottomNav() {
             type="button"
             aria-label="Add transaction"
             onClick={() => setAddOpen(true)}
-            className="flex size-12 -translate-y-3 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform active:scale-95"
+            className="bg-primary text-primary-foreground flex size-12 -translate-y-3 items-center justify-center rounded-full shadow-lg transition-transform active:scale-95"
           >
             <Plus className="size-6" aria-hidden="true" />
           </button>
@@ -159,7 +172,7 @@ function QuickAddButton({
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-3 rounded-lg border p-4 text-left text-sm font-medium transition-colors hover:bg-accent"
+      className="hover:bg-accent flex items-center gap-3 rounded-lg border p-4 text-left text-sm font-medium transition-colors"
     >
       <Icon className={cn('size-5', iconClassName)} aria-hidden="true" />
       {label}

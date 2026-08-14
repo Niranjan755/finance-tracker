@@ -1,10 +1,19 @@
 import { z } from 'zod'
 
 function isValidAmountString(v: string): boolean {
-  return v.trim() !== '' && !Number.isNaN(Number(v.replace(/,/g, ''))) && Number(v.replace(/,/g, '')) > 0
+  return (
+    v.trim() !== '' && !Number.isNaN(Number(v.replace(/,/g, ''))) && Number(v.replace(/,/g, '')) > 0
+  )
 }
 
-export const RECURRENCE_FREQUENCIES = ['daily', 'weekly', 'biweekly', 'monthly', 'quarterly', 'yearly'] as const
+export const RECURRENCE_FREQUENCIES = [
+  'daily',
+  'weekly',
+  'biweekly',
+  'monthly',
+  'quarterly',
+  'yearly',
+] as const
 
 export const FREQUENCY_LABELS: Record<(typeof RECURRENCE_FREQUENCIES)[number], string> = {
   daily: 'Daily',
@@ -21,7 +30,11 @@ export const recurringFormSchema = z
     accountId: z.string().min(1, 'Choose an account'),
     categoryId: z.string().min(1, 'Choose a category'),
     type: z.enum(['expense', 'income']),
-    amount: z.string().trim().min(1, 'Amount is required').refine(isValidAmountString, 'Enter a valid positive amount'),
+    amount: z
+      .string()
+      .trim()
+      .min(1, 'Amount is required')
+      .refine(isValidAmountString, 'Enter a valid positive amount'),
     frequency: z.enum(RECURRENCE_FREQUENCIES),
     startDate: z.string().min(1, 'Start date is required'),
     endDate: z.string(),

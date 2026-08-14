@@ -40,8 +40,12 @@ export function TransactionDialog() {
     }
   }, [addOpen, defaultType])
 
-  const editingTransaction = editTransactionId ? transactions.find((t) => t.id === editTransactionId) : undefined
-  const editingTransfer = editTransferId ? transfers.find((t) => t.id === editTransferId) : undefined
+  const editingTransaction = editTransactionId
+    ? transactions.find((t) => t.id === editTransactionId)
+    : undefined
+  const editingTransfer = editTransferId
+    ? transfers.find((t) => t.id === editTransferId)
+    : undefined
 
   const isOpen = addOpen || !!editTransactionId || !!editTransferId
 
@@ -66,7 +70,9 @@ export function TransactionDialog() {
       }
       handleOpenChange(false)
     } catch (err) {
-      toast.error('Unable to save transaction', { description: err instanceof Error ? err.message : 'Please try again.' })
+      toast.error('Unable to save transaction', {
+        description: err instanceof Error ? err.message : 'Please try again.',
+      })
     }
   }
 
@@ -76,7 +82,9 @@ export function TransactionDialog() {
       toast.success('Transfer completed')
       handleOpenChange(false)
     } catch (err) {
-      toast.error('Unable to complete transfer', { description: err instanceof Error ? err.message : 'Please try again.' })
+      toast.error('Unable to complete transfer', {
+        description: err instanceof Error ? err.message : 'Please try again.',
+      })
     }
   }
 
@@ -94,7 +102,12 @@ export function TransactionDialog() {
         </DialogHeader>
 
         {editingTransfer ? (
-          <TransferForm accounts={accounts} transfer={editingTransfer} onSubmit={handleTransferSubmit} onCancel={() => handleOpenChange(false)} />
+          <TransferForm
+            accounts={accounts}
+            transfer={editingTransfer}
+            onSubmit={handleTransferSubmit}
+            onCancel={() => handleOpenChange(false)}
+          />
         ) : editingTransaction ? (
           <ExpenseIncomeForm
             type={editingTransaction.type}
@@ -138,7 +151,11 @@ export function TransactionDialog() {
               />
             </TabsContent>
             <TabsContent value="transfer" className="pt-4">
-              <TransferForm accounts={accounts} onSubmit={handleTransferSubmit} onCancel={() => handleOpenChange(false)} />
+              <TransferForm
+                accounts={accounts}
+                onSubmit={handleTransferSubmit}
+                onCancel={() => handleOpenChange(false)}
+              />
             </TabsContent>
           </Tabs>
         )}

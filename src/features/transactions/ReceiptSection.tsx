@@ -12,7 +12,9 @@ interface ReceiptSectionProps {
 
 export function ReceiptSection({ transactionId }: ReceiptSectionProps) {
   // Read live from the store (not a prop snapshot) so attach/remove reflect immediately.
-  const receiptId = useFinanceStore((s) => s.transactions.find((t) => t.id === transactionId)?.receiptId ?? null)
+  const receiptId = useFinanceStore(
+    (s) => s.transactions.find((t) => t.id === transactionId)?.receiptId ?? null,
+  )
   const attachReceiptToTransaction = useFinanceStore((s) => s.attachReceiptToTransaction)
   const removeReceiptFromTransaction = useFinanceStore((s) => s.removeReceiptFromTransaction)
   const [receipt, setReceipt] = useState<Receipt | null>(null)
@@ -53,7 +55,9 @@ export function ReceiptSection({ transactionId }: ReceiptSectionProps) {
       await attachReceiptToTransaction(transactionId, file)
       toast.success('Receipt attached')
     } catch (err) {
-      toast.error('Unable to attach receipt', { description: err instanceof Error ? err.message : undefined })
+      toast.error('Unable to attach receipt', {
+        description: err instanceof Error ? err.message : undefined,
+      })
     } finally {
       setUploading(false)
     }
@@ -72,7 +76,12 @@ export function ReceiptSection({ transactionId }: ReceiptSectionProps) {
           Receipt
         </p>
         {receipt && (
-          <Button variant="ghost" size="sm" className="h-auto gap-1 p-1 text-destructive" onClick={handleRemove}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-destructive h-auto gap-1 p-1"
+            onClick={handleRemove}
+          >
             <Trash2 className="size-3.5" aria-hidden="true" />
             Remove
           </Button>
@@ -85,14 +94,18 @@ export function ReceiptSection({ transactionId }: ReceiptSectionProps) {
             href={objectUrl}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-2 rounded-lg border p-3 text-sm hover:bg-accent"
+            className="hover:bg-accent flex items-center gap-2 rounded-lg border p-3 text-sm"
           >
-            <FileText className="size-5 text-muted-foreground" aria-hidden="true" />
+            <FileText className="text-muted-foreground size-5" aria-hidden="true" />
             {receipt.fileName}
           </a>
         ) : (
           <a href={objectUrl} target="_blank" rel="noreferrer">
-            <img src={objectUrl} alt={`Receipt: ${receipt.fileName}`} className="max-h-48 rounded-lg border object-contain" />
+            <img
+              src={objectUrl}
+              alt={`Receipt: ${receipt.fileName}`}
+              className="max-h-48 rounded-lg border object-contain"
+            />
           </a>
         )
       ) : (
@@ -104,7 +117,13 @@ export function ReceiptSection({ transactionId }: ReceiptSectionProps) {
             className="hidden"
             onChange={handleFileChange}
           />
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+          >
             <Upload className="size-3.5" aria-hidden="true" />
             {uploading ? 'Uploading...' : 'Add Receipt'}
           </Button>

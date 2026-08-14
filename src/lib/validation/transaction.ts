@@ -1,13 +1,19 @@
 import { z } from 'zod'
 
 function isValidAmountString(v: string): boolean {
-  return v.trim() !== '' && !Number.isNaN(Number(v.replace(/,/g, ''))) && Number(v.replace(/,/g, '')) > 0
+  return (
+    v.trim() !== '' && !Number.isNaN(Number(v.replace(/,/g, ''))) && Number(v.replace(/,/g, '')) > 0
+  )
 }
 
 export const transactionFormSchema = z.object({
   accountId: z.string().min(1, 'Choose an account'),
   categoryId: z.string().min(1, 'Choose a category'),
-  amount: z.string().trim().min(1, 'Amount is required').refine(isValidAmountString, 'Enter a valid positive amount'),
+  amount: z
+    .string()
+    .trim()
+    .min(1, 'Amount is required')
+    .refine(isValidAmountString, 'Enter a valid positive amount'),
   date: z.string().min(1, 'Date is required'),
   merchant: z.string().trim().max(80, 'Keep it under 80 characters'),
   description: z.string().trim().max(200, 'Keep it under 200 characters'),
@@ -22,7 +28,11 @@ export const transferFormSchema = z
   .object({
     fromAccountId: z.string().min(1, 'Choose a source account'),
     toAccountId: z.string().min(1, 'Choose a destination account'),
-    amount: z.string().trim().min(1, 'Amount is required').refine(isValidAmountString, 'Enter a valid positive amount'),
+    amount: z
+      .string()
+      .trim()
+      .min(1, 'Amount is required')
+      .refine(isValidAmountString, 'Enter a valid positive amount'),
     date: z.string().min(1, 'Date is required'),
     description: z.string().trim().max(200, 'Keep it under 200 characters'),
   })

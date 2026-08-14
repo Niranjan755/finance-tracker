@@ -39,7 +39,9 @@ export function TransactionDetailSheet({ transaction, onClose }: TransactionDeta
 
   const account = accounts.find((a) => a.id === transaction.accountId)
   const category = categories.find((c) => c.id === transaction.categoryId)
-  const parentCategory = category?.parentId ? categories.find((c) => c.id === category.parentId) : undefined
+  const parentCategory = category?.parentId
+    ? categories.find((c) => c.id === category.parentId)
+    : undefined
   const Icon = getIcon(category?.icon ?? 'circle-dashed')
 
   async function handleDelete() {
@@ -68,19 +70,45 @@ export function TransactionDetailSheet({ transaction, onClose }: TransactionDeta
             <div className="flex flex-col items-center gap-2 pt-2 text-center">
               <div
                 className="flex size-12 items-center justify-center rounded-full"
-                style={{ backgroundColor: `${category?.color ?? '#6b7280'}1a`, color: category?.color ?? '#6b7280' }}
+                style={{
+                  backgroundColor: `${category?.color ?? '#6b7280'}1a`,
+                  color: category?.color ?? '#6b7280',
+                }}
               >
                 <Icon className="size-6" aria-hidden="true" />
               </div>
-              <p className="text-lg font-medium">{transaction.merchant || category?.name || 'Transaction'}</p>
-              <MoneyText cents={transaction.amountCents} kind={transaction.type} currency={account?.currency} className="text-3xl font-semibold" />
+              <p className="text-lg font-medium">
+                {transaction.merchant || category?.name || 'Transaction'}
+              </p>
+              <MoneyText
+                cents={transaction.amountCents}
+                kind={transaction.type}
+                currency={account?.currency}
+                className="text-3xl font-semibold"
+              />
             </div>
 
             <dl className="space-y-3 text-sm">
-              <Row label="Category" value={parentCategory ? `${parentCategory.name} → ${category?.name}` : (category?.name ?? '-')} />
-              <Row label={transaction.type === 'expense' ? 'Paid With' : 'Received Into'} value={account ? `${account.name}${account.lastFour ? ` ••••${account.lastFour}` : ''}` : '-'} />
+              <Row
+                label="Category"
+                value={
+                  parentCategory
+                    ? `${parentCategory.name} → ${category?.name}`
+                    : (category?.name ?? '-')
+                }
+              />
+              <Row
+                label={transaction.type === 'expense' ? 'Paid With' : 'Received Into'}
+                value={
+                  account
+                    ? `${account.name}${account.lastFour ? ` ••••${account.lastFour}` : ''}`
+                    : '-'
+                }
+              />
               <Row label="Date" value={formatDisplayDate(transaction.date)} />
-              {transaction.description && <Row label="Description" value={transaction.description} />}
+              {transaction.description && (
+                <Row label="Description" value={transaction.description} />
+              )}
               {transaction.location && <Row label="Location" value={transaction.location} />}
               {transaction.notes && <Row label="Notes" value={transaction.notes} />}
               {transaction.tags.length > 0 && (
@@ -115,7 +143,11 @@ export function TransactionDetailSheet({ transaction, onClose }: TransactionDeta
                 <Copy className="size-4" aria-hidden="true" />
                 Duplicate
               </Button>
-              <Button variant="outline" className="flex-col gap-1 py-4 text-destructive" onClick={() => setDeleteOpen(true)}>
+              <Button
+                variant="outline"
+                className="text-destructive flex-col gap-1 py-4"
+                onClick={() => setDeleteOpen(true)}
+              >
                 <Trash2 className="size-4" aria-hidden="true" />
                 Delete
               </Button>

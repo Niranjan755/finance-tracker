@@ -23,7 +23,13 @@ interface AccountCardProps {
   onDelete: () => void
 }
 
-export function AccountCard({ account, onEdit, onDeactivate, onReactivate, onDelete }: AccountCardProps) {
+export function AccountCard({
+  account,
+  onEdit,
+  onDeactivate,
+  onReactivate,
+  onDelete,
+}: AccountCardProps) {
   const Icon = getIcon(account.icon)
   const isCreditCard = account.type === 'credit_card'
   const limit = account.creditLimitCents ?? 0
@@ -41,16 +47,21 @@ export function AccountCard({ account, onEdit, onDeactivate, onReactivate, onDel
             <Icon className="size-5" aria-hidden="true" />
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
               {account.institution || ACCOUNT_TYPE_LABELS[account.type]}
             </p>
-            <p className="font-medium leading-tight">{account.name}</p>
+            <p className="leading-tight font-medium">{account.name}</p>
           </div>
         </Link>
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
-              <Button variant="ghost" size="icon" className="size-8" aria-label={`Actions for ${account.name}`}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-8"
+                aria-label={`Actions for ${account.name}`}
+              >
                 <MoreVertical className="size-4" aria-hidden="true" />
               </Button>
             }
@@ -70,27 +81,41 @@ export function AccountCard({ account, onEdit, onDeactivate, onReactivate, onDel
       </div>
 
       <div className="flex items-baseline justify-between">
-        <span className="text-xs text-muted-foreground">
+        <span className="text-muted-foreground text-xs">
           {ACCOUNT_TYPE_LABELS[account.type]} {account.lastFour && `••••${account.lastFour}`}
         </span>
       </div>
 
-      <p className={`text-2xl font-semibold tabular-nums ${isCreditCard ? 'text-red-600 dark:text-red-400' : ''}`}>
-        {formatCurrency(isCreditCard ? -account.balanceCents : account.balanceCents, account.currency)}
+      <p
+        className={`text-2xl font-semibold tabular-nums ${isCreditCard ? 'text-red-600 dark:text-red-400' : ''}`}
+      >
+        {formatCurrency(
+          isCreditCard ? -account.balanceCents : account.balanceCents,
+          account.currency,
+        )}
       </p>
 
       {isCreditCard && (
         <div className="space-y-1.5 pt-1">
-          <div className="flex justify-between text-xs text-muted-foreground">
+          <div className="text-muted-foreground flex justify-between text-xs">
             <span>Available {formatCurrency(available, account.currency)}</span>
             <span>Limit {formatCurrency(limit, account.currency)}</span>
           </div>
-          <Progress value={Math.min(utilization, 100)} className={utilization > 90 ? '[&>div]:bg-red-500' : utilization > 75 ? '[&>div]:bg-amber-500' : ''} />
-          <p className="text-xs text-muted-foreground">{utilization.toFixed(1)}% utilization</p>
+          <Progress
+            value={Math.min(utilization, 100)}
+            className={
+              utilization > 90
+                ? '[&>div]:bg-red-500'
+                : utilization > 75
+                  ? '[&>div]:bg-amber-500'
+                  : ''
+            }
+          />
+          <p className="text-muted-foreground text-xs">{utilization.toFixed(1)}% utilization</p>
         </div>
       )}
 
-      {!account.isActive && <p className="text-xs font-medium text-muted-foreground">Inactive</p>}
+      {!account.isActive && <p className="text-muted-foreground text-xs font-medium">Inactive</p>}
     </Card>
   )
 }

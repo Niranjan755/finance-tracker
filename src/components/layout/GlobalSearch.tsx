@@ -61,14 +61,22 @@ export function GlobalSearch() {
     <>
       <Button
         variant="outline"
-        className="hidden w-64 justify-start gap-2 text-muted-foreground sm:flex"
+        className="text-muted-foreground hidden w-64 justify-start gap-2 sm:flex"
         onClick={() => setOpen(true)}
       >
         <Search className="size-4" aria-hidden="true" />
         Search...
-        <kbd className="ml-auto rounded border bg-muted px-1.5 py-0.5 text-[10px] font-medium">⌘K</kbd>
+        <kbd className="bg-muted ml-auto rounded border px-1.5 py-0.5 text-[10px] font-medium">
+          ⌘K
+        </kbd>
       </Button>
-      <Button variant="ghost" size="icon" className="sm:hidden" aria-label="Search" onClick={() => setOpen(true)}>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="sm:hidden"
+        aria-label="Search"
+        onClick={() => setOpen(true)}
+      >
         <Search className="size-4.5" aria-hidden="true" />
       </Button>
 
@@ -84,9 +92,10 @@ export function GlobalSearch() {
           onValueChange={setQuery}
         />
         <CommandList>
-          {q && matchedAccounts.length === 0 && matchedCategories.length === 0 && matchedTransactions.length === 0 && (
-            <CommandEmpty>No results found.</CommandEmpty>
-          )}
+          {q &&
+            matchedAccounts.length === 0 &&
+            matchedCategories.length === 0 &&
+            matchedTransactions.length === 0 && <CommandEmpty>No results found.</CommandEmpty>}
           {!q && <CommandEmpty>Type to search transactions, accounts, or categories.</CommandEmpty>}
 
           {matchedAccounts.length > 0 && (
@@ -102,7 +111,7 @@ export function GlobalSearch() {
                 >
                   <Landmark className="size-4" aria-hidden="true" />
                   {a.name}
-                  <span className="ml-auto text-xs text-muted-foreground">
+                  <span className="text-muted-foreground ml-auto text-xs">
                     {formatSignedCurrency(a.balanceCents, 'neutral', a.currency)}
                   </span>
                 </CommandItem>
@@ -145,7 +154,7 @@ export function GlobalSearch() {
                     <Receipt className="size-4" aria-hidden="true" />
                     <span className="flex-1 truncate">
                       {t.merchant || category?.name || 'Transaction'}
-                      <span className="ml-2 text-xs text-muted-foreground">
+                      <span className="text-muted-foreground ml-2 text-xs">
                         {formatDisplayDate(t.date)} · {account?.name}
                       </span>
                     </span>

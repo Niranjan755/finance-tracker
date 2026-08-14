@@ -44,7 +44,11 @@ export function computeInsights(
   }
 
   // Highest spending category this month.
-  const currentBreakdown = computeCategoryBreakdown(current.expenseTransactions, categories, 'expense')
+  const currentBreakdown = computeCategoryBreakdown(
+    current.expenseTransactions,
+    categories,
+    'expense',
+  )
   if (currentBreakdown.length > 0 && current.totalExpenseCents > 0) {
     const top = currentBreakdown[0]!
     insights.push({
@@ -54,7 +58,11 @@ export function computeInsights(
   }
 
   // Category-over-category comparison (only when last month had spending in that category).
-  const previousBreakdown = computeCategoryBreakdown(previous.expenseTransactions, categories, 'expense')
+  const previousBreakdown = computeCategoryBreakdown(
+    previous.expenseTransactions,
+    categories,
+    'expense',
+  )
   const previousByCategory = new Map(previousBreakdown.map((e) => [e.categoryId, e.amountCents]))
   for (const entry of currentBreakdown.slice(0, 3)) {
     const prevAmount = previousByCategory.get(entry.categoryId)
@@ -96,7 +104,10 @@ export function computeInsights(
   const startOfMonthNetWorth = netWorthAsOf(accounts, transactions, dayBeforeMonthStart)
   if (startOfMonthNetWorth !== 0) {
     const currentNetWorth = netWorthAsOf(accounts, transactions, asOfISO)
-    const changePercent = percentOf(currentNetWorth - startOfMonthNetWorth, Math.abs(startOfMonthNetWorth))
+    const changePercent = percentOf(
+      currentNetWorth - startOfMonthNetWorth,
+      Math.abs(startOfMonthNetWorth),
+    )
     if (Math.abs(changePercent) >= 0.5) {
       insights.push({
         id: 'net-worth-change',

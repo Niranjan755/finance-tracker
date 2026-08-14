@@ -128,7 +128,13 @@ export async function generateDemoData(): Promise<{
     })
   }
 
-  function addTransfer(fromId: string, toId: string, amountCents: number, date: string, isCreditCardPayment = false) {
+  function addTransfer(
+    fromId: string,
+    toId: string,
+    amountCents: number,
+    date: string,
+    isCreditCardPayment = false,
+  ) {
     transfers.push({
       id: generateId('xfer'),
       fromAccountId: fromId,
@@ -153,40 +159,110 @@ export async function generateDemoData(): Promise<{
 
     // Biweekly salary.
     if (d % 14 === 0) {
-      addTransaction({ accountId: checking.id, categoryId: cat('Salary'), type: 'income', amountCents: toCents('4100'), merchant: 'Employer Inc', date })
+      addTransaction({
+        accountId: checking.id,
+        categoryId: cat('Salary'),
+        type: 'income',
+        amountCents: toCents('4100'),
+        merchant: 'Employer Inc',
+        date,
+      })
     }
     // Monthly rent, on the 1st-ish.
     if (d % 30 === 1) {
-      addTransaction({ accountId: checking.id, categoryId: cat('Rent'), type: 'expense', amountCents: toCents('2000'), merchant: 'Property Management Co', date })
+      addTransaction({
+        accountId: checking.id,
+        categoryId: cat('Rent'),
+        type: 'expense',
+        amountCents: toCents('2000'),
+        merchant: 'Property Management Co',
+        date,
+      })
     }
     // Weekly groceries.
     if (dow === 6) {
-      addTransaction({ accountId: checking.id, categoryId: cat('Groceries'), type: 'expense', amountCents: randomAmount(60, 140), merchant: pick(GROCERIES), date })
+      addTransaction({
+        accountId: checking.id,
+        categoryId: cat('Groceries'),
+        type: 'expense',
+        amountCents: randomAmount(60, 140),
+        merchant: pick(GROCERIES),
+        date,
+      })
     }
     // Restaurants a few times a week.
     if (Math.random() < 0.35) {
-      addTransaction({ accountId: sapphire.id, categoryId: cat('Restaurants'), type: 'expense', amountCents: randomAmount(15, 85), merchant: pick(RESTAURANTS), date })
+      addTransaction({
+        accountId: sapphire.id,
+        categoryId: cat('Restaurants'),
+        type: 'expense',
+        amountCents: randomAmount(15, 85),
+        merchant: pick(RESTAURANTS),
+        date,
+      })
     }
     // Coffee often.
     if (Math.random() < 0.5) {
-      addTransaction({ accountId: cash.id, categoryId: cat('Coffee'), type: 'expense', amountCents: randomAmount(4, 9), merchant: pick(COFFEE), date })
+      addTransaction({
+        accountId: cash.id,
+        categoryId: cat('Coffee'),
+        type: 'expense',
+        amountCents: randomAmount(4, 9),
+        merchant: pick(COFFEE),
+        date,
+      })
     }
     // Shopping occasionally.
     if (Math.random() < 0.12) {
-      addTransaction({ accountId: capitalOne.id, categoryId: cat('Amazon'), type: 'expense', amountCents: randomAmount(20, 150), merchant: pick(SHOPPING), date })
+      addTransaction({
+        accountId: capitalOne.id,
+        categoryId: cat('Amazon'),
+        type: 'expense',
+        amountCents: randomAmount(20, 150),
+        merchant: pick(SHOPPING),
+        date,
+      })
     }
     // Gas weekly-ish.
     if (dow === 3) {
-      addTransaction({ accountId: sapphire.id, categoryId: cat('Gas'), type: 'expense', amountCents: randomAmount(35, 60), merchant: 'Shell', date })
+      addTransaction({
+        accountId: sapphire.id,
+        categoryId: cat('Gas'),
+        type: 'expense',
+        amountCents: randomAmount(35, 60),
+        merchant: 'Shell',
+        date,
+      })
     }
     // Streaming, monthly.
     if (d % 30 === 15) {
-      addTransaction({ accountId: sapphire.id, categoryId: cat('Streaming'), type: 'expense', amountCents: toCents('15.99'), merchant: 'Netflix', date })
+      addTransaction({
+        accountId: sapphire.id,
+        categoryId: cat('Streaming'),
+        type: 'expense',
+        amountCents: toCents('15.99'),
+        merchant: 'Netflix',
+        date,
+      })
     }
     // Utilities, monthly.
     if (d % 30 === 5) {
-      addTransaction({ accountId: checking.id, categoryId: cat('Electricity'), type: 'expense', amountCents: randomAmount(60, 120), merchant: 'PG&E', date })
-      addTransaction({ accountId: checking.id, categoryId: cat('Internet'), type: 'expense', amountCents: toCents('80'), merchant: 'Comcast', date })
+      addTransaction({
+        accountId: checking.id,
+        categoryId: cat('Electricity'),
+        type: 'expense',
+        amountCents: randomAmount(60, 120),
+        merchant: 'PG&E',
+        date,
+      })
+      addTransaction({
+        accountId: checking.id,
+        categoryId: cat('Internet'),
+        type: 'expense',
+        amountCents: toCents('80'),
+        merchant: 'Comcast',
+        date,
+      })
     }
     // Transfer to savings monthly.
     if (d % 30 === 3) {
@@ -211,7 +287,14 @@ export async function generateDemoData(): Promise<{
   for (const t of sorted) {
     const account = accountById.get(t.accountId)!
     const liability = isLiability(account.id)
-    const delta = t.type === 'expense' ? (liability ? t.amountCents : -t.amountCents) : liability ? -t.amountCents : t.amountCents
+    const delta =
+      t.type === 'expense'
+        ? liability
+          ? t.amountCents
+          : -t.amountCents
+        : liability
+          ? -t.amountCents
+          : t.amountCents
     account.balanceCents += delta
   }
   const sortedTransfers = [...transfers].sort((a, b) => a.date.localeCompare(b.date))
@@ -223,8 +306,20 @@ export async function generateDemoData(): Promise<{
   }
 
   const budgets: Budget[] = [
-    { id: generateId('budget'), categoryId: cat('Food'), month: new Date().getMonth() + 1, year: new Date().getFullYear(), amountCents: toCents('600') },
-    { id: generateId('budget'), categoryId: cat('Entertainment'), month: new Date().getMonth() + 1, year: new Date().getFullYear(), amountCents: toCents('150') },
+    {
+      id: generateId('budget'),
+      categoryId: cat('Food'),
+      month: new Date().getMonth() + 1,
+      year: new Date().getFullYear(),
+      amountCents: toCents('600'),
+    },
+    {
+      id: generateId('budget'),
+      categoryId: cat('Entertainment'),
+      month: new Date().getMonth() + 1,
+      year: new Date().getFullYear(),
+      amountCents: toCents('150'),
+    },
   ]
 
   return { accounts, categories, transactions, transfers, budgets }
@@ -233,8 +328,15 @@ export async function generateDemoData(): Promise<{
 export async function seedDemoDataIntoDB(): Promise<void> {
   const { accounts, categories, transactions, transfers, budgets } = await generateDemoData()
   const db = await getDB()
-  await Promise.all((['accounts', 'categories', 'transactions', 'transfers', 'budgets'] as const).map((s) => db.clear(s)))
-  const tx = db.transaction(['accounts', 'categories', 'transactions', 'transfers', 'budgets'], 'readwrite')
+  await Promise.all(
+    (['accounts', 'categories', 'transactions', 'transfers', 'budgets'] as const).map((s) =>
+      db.clear(s),
+    ),
+  )
+  const tx = db.transaction(
+    ['accounts', 'categories', 'transactions', 'transfers', 'budgets'],
+    'readwrite',
+  )
   await Promise.all([
     ...accounts.map((a) => tx.objectStore('accounts').put(a)),
     ...categories.map((c) => tx.objectStore('categories').put(c)),

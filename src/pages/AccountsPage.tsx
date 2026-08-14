@@ -59,10 +59,15 @@ export function AccountsPage() {
           lastFour: values.lastFour,
           creditLimitCents: values.type === 'credit_card' ? toCents(values.creditLimit) : null,
           statementBalanceCents:
-            values.type === 'credit_card' && values.statementBalance ? toCents(values.statementBalance) : null,
+            values.type === 'credit_card' && values.statementBalance
+              ? toCents(values.statementBalance)
+              : null,
           minimumPaymentCents:
-            values.type === 'credit_card' && values.minimumPayment ? toCents(values.minimumPayment) : null,
-          paymentDueDate: values.type === 'credit_card' && values.paymentDueDate ? values.paymentDueDate : null,
+            values.type === 'credit_card' && values.minimumPayment
+              ? toCents(values.minimumPayment)
+              : null,
+          paymentDueDate:
+            values.type === 'credit_card' && values.paymentDueDate ? values.paymentDueDate : null,
           currency: values.currency,
           icon: values.icon,
           color: values.color,
@@ -86,7 +91,9 @@ export function AccountsPage() {
       }
       setFormOpen(false)
     } catch (err) {
-      toast.error('Unable to save account', { description: err instanceof Error ? err.message : undefined })
+      toast.error('Unable to save account', {
+        description: err instanceof Error ? err.message : undefined,
+      })
     }
   }
 
@@ -117,16 +124,31 @@ export function AccountsPage() {
       {accounts.length > 0 && (
         <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <Card className="p-4">
-            <p className="text-xs font-medium text-muted-foreground">Total Assets</p>
-            <MoneyText cents={totals.totalAssetsCents} kind="neutral" signed={false} className="text-xl font-semibold" />
+            <p className="text-muted-foreground text-xs font-medium">Total Assets</p>
+            <MoneyText
+              cents={totals.totalAssetsCents}
+              kind="neutral"
+              signed={false}
+              className="text-xl font-semibold"
+            />
           </Card>
           <Card className="p-4">
-            <p className="text-xs font-medium text-muted-foreground">Total Liabilities</p>
-            <MoneyText cents={totals.totalLiabilitiesCents} kind="neutral" signed={false} className="text-xl font-semibold" />
+            <p className="text-muted-foreground text-xs font-medium">Total Liabilities</p>
+            <MoneyText
+              cents={totals.totalLiabilitiesCents}
+              kind="neutral"
+              signed={false}
+              className="text-xl font-semibold"
+            />
           </Card>
           <Card className="p-4">
-            <p className="text-xs font-medium text-muted-foreground">Net Worth</p>
-            <MoneyText cents={totals.netWorthCents} kind="neutral" signed={false} className="text-xl font-semibold" />
+            <p className="text-muted-foreground text-xs font-medium">Net Worth</p>
+            <MoneyText
+              cents={totals.netWorthCents}
+              kind="neutral"
+              signed={false}
+              className="text-xl font-semibold"
+            />
           </Card>
         </div>
       )}
@@ -147,7 +169,7 @@ export function AccountsPage() {
         <div className="space-y-8">
           {liquid.length > 0 && (
             <section>
-              <h3 className="mb-3 text-sm font-medium text-muted-foreground">Cash &amp; Bank</h3>
+              <h3 className="text-muted-foreground mb-3 text-sm font-medium">Cash &amp; Bank</h3>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {liquid.map((account) => (
                   <AccountCard
@@ -165,7 +187,7 @@ export function AccountsPage() {
 
           {creditCards.length > 0 && (
             <section>
-              <h3 className="mb-3 text-sm font-medium text-muted-foreground">Credit Cards</h3>
+              <h3 className="text-muted-foreground mb-3 text-sm font-medium">Credit Cards</h3>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {creditCards.map((account) => (
                   <AccountCard
@@ -188,16 +210,24 @@ export function AccountsPage() {
           <DialogHeader>
             <DialogTitle>{editingAccount ? 'Edit Account' : 'Add Account'}</DialogTitle>
           </DialogHeader>
-          <AccountForm account={editingAccount} onSubmit={handleSubmit} onCancel={() => setFormOpen(false)} />
+          <AccountForm
+            account={editingAccount}
+            onSubmit={handleSubmit}
+            onCancel={() => setFormOpen(false)}
+          />
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!deletingAccount} onOpenChange={(open) => !open && setDeletingAccount(null)}>
+      <AlertDialog
+        open={!!deletingAccount}
+        onOpenChange={(open) => !open && setDeletingAccount(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {deletingAccount?.name}?</AlertDialogTitle>
             <AlertDialogDescription>
-              This can't be undone. Accounts with transaction history can't be deleted - deactivate them instead.
+              This can't be undone. Accounts with transaction history can't be deleted - deactivate
+              them instead.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

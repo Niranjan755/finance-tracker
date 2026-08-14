@@ -143,9 +143,33 @@ describe('computeMonthlyStatement', () => {
 describe('computeCategoryBreakdown', () => {
   it('groups by top-level category and computes percentages', () => {
     const categories: Category[] = [
-      { id: 'housing', name: 'Housing', type: 'expense', parentId: null, icon: '', color: '', isDefault: true },
-      { id: 'rent', name: 'Rent', type: 'expense', parentId: 'housing', icon: '', color: '', isDefault: true },
-      { id: 'food', name: 'Food', type: 'expense', parentId: null, icon: '', color: '', isDefault: true },
+      {
+        id: 'housing',
+        name: 'Housing',
+        type: 'expense',
+        parentId: null,
+        icon: '',
+        color: '',
+        isDefault: true,
+      },
+      {
+        id: 'rent',
+        name: 'Rent',
+        type: 'expense',
+        parentId: 'housing',
+        icon: '',
+        color: '',
+        isDefault: true,
+      },
+      {
+        id: 'food',
+        name: 'Food',
+        type: 'expense',
+        parentId: null,
+        icon: '',
+        color: '',
+        isDefault: true,
+      },
     ]
     const transactions: Transaction[] = [
       txn({ type: 'expense', categoryId: 'rent', amountCents: toCents('300') }),
@@ -153,8 +177,22 @@ describe('computeCategoryBreakdown', () => {
     ]
     const breakdown = computeCategoryBreakdown(transactions, categories)
     expect(breakdown).toEqual([
-      { categoryId: 'housing', name: 'Housing', icon: '', color: '', amountCents: toCents('300'), percent: 75 },
-      { categoryId: 'food', name: 'Food', icon: '', color: '', amountCents: toCents('100'), percent: 25 },
+      {
+        categoryId: 'housing',
+        name: 'Housing',
+        icon: '',
+        color: '',
+        amountCents: toCents('300'),
+        percent: 75,
+      },
+      {
+        categoryId: 'food',
+        name: 'Food',
+        icon: '',
+        color: '',
+        amountCents: toCents('100'),
+        percent: 25,
+      },
     ])
   })
 })
@@ -172,9 +210,19 @@ describe('budgetStatusFor', () => {
 describe('computeBudgetProgress', () => {
   it('matches the spec example: Food budget 600, spent 425, remaining 175', () => {
     const categories: Category[] = [
-      { id: 'food', name: 'Food', type: 'expense', parentId: null, icon: '', color: '', isDefault: true },
+      {
+        id: 'food',
+        name: 'Food',
+        type: 'expense',
+        parentId: null,
+        icon: '',
+        color: '',
+        isDefault: true,
+      },
     ]
-    const budgets: Budget[] = [{ id: 'b1', categoryId: 'food', month: 8, year: 2026, amountCents: toCents('600') }]
+    const budgets: Budget[] = [
+      { id: 'b1', categoryId: 'food', month: 8, year: 2026, amountCents: toCents('600') },
+    ]
     const transactions: Transaction[] = [
       txn({ categoryId: 'food', amountCents: toCents('425'), date: '2026-08-10' }),
     ]
@@ -186,10 +234,28 @@ describe('computeBudgetProgress', () => {
 
   it('includes spending from subcategories under a parent budget', () => {
     const categories: Category[] = [
-      { id: 'food', name: 'Food', type: 'expense', parentId: null, icon: '', color: '', isDefault: true },
-      { id: 'restaurants', name: 'Restaurants', type: 'expense', parentId: 'food', icon: '', color: '', isDefault: true },
+      {
+        id: 'food',
+        name: 'Food',
+        type: 'expense',
+        parentId: null,
+        icon: '',
+        color: '',
+        isDefault: true,
+      },
+      {
+        id: 'restaurants',
+        name: 'Restaurants',
+        type: 'expense',
+        parentId: 'food',
+        icon: '',
+        color: '',
+        isDefault: true,
+      },
     ]
-    const budgets: Budget[] = [{ id: 'b1', categoryId: 'food', month: 8, year: 2026, amountCents: toCents('600') }]
+    const budgets: Budget[] = [
+      { id: 'b1', categoryId: 'food', month: 8, year: 2026, amountCents: toCents('600') },
+    ]
     const transactions: Transaction[] = [
       txn({ categoryId: 'restaurants', amountCents: toCents('100'), date: '2026-08-10' }),
     ]
@@ -211,8 +277,20 @@ describe('computeSpendingByAccount', () => {
     ]
     const result = computeSpendingByAccount(transactions, accounts)
     expect(result).toEqual([
-      { accountId: 'checking', name: 'Account', color: '#111', amountCents: toCents('300'), percent: 75 },
-      { accountId: 'visa', name: 'Account', color: '#222', amountCents: toCents('100'), percent: 25 },
+      {
+        accountId: 'checking',
+        name: 'Account',
+        color: '#111',
+        amountCents: toCents('300'),
+        percent: 75,
+      },
+      {
+        accountId: 'visa',
+        name: 'Account',
+        color: '#222',
+        amountCents: toCents('100'),
+        percent: 25,
+      },
     ])
   })
 })

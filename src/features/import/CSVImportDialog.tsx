@@ -3,10 +3,28 @@ import { toast } from 'sonner'
 import { Upload } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { parseCSVFile, validateImportRows, type ColumnMapping, type ParsedCSV } from '@/lib/import/csvImport'
+import {
+  parseCSVFile,
+  validateImportRows,
+  type ColumnMapping,
+  type ParsedCSV,
+} from '@/lib/import/csvImport'
 import { useFinanceStore } from '@/store/financeStore'
 import { formatDisplayDate } from '@/lib/date'
 import { formatSignedCurrency } from '@/lib/money'
@@ -16,7 +34,13 @@ interface CSVImportDialogProps {
   onOpenChange: (open: boolean) => void
 }
 
-const EMPTY_MAPPING: ColumnMapping = { date: null, merchant: null, amount: null, category: null, account: null }
+const EMPTY_MAPPING: ColumnMapping = {
+  date: null,
+  merchant: null,
+  amount: null,
+  category: null,
+  account: null,
+}
 
 export function CSVImportDialog({ open, onOpenChange }: CSVImportDialogProps) {
   const accounts = useFinanceStore((s) => s.accounts)
@@ -55,7 +79,8 @@ export function CSVImportDialog({ open, onOpenChange }: CSVImportDialogProps) {
       }
       setParsed(result)
       // Best-effort auto-mapping by common header names.
-      const guess = (names: string[]) => result.headers.find((h) => names.includes(h.trim().toLowerCase())) ?? null
+      const guess = (names: string[]) =>
+        result.headers.find((h) => names.includes(h.trim().toLowerCase())) ?? null
       setMapping({
         date: guess(['date', 'transaction date']),
         merchant: guess(['description', 'merchant', 'payee', 'name']),
@@ -73,7 +98,15 @@ export function CSVImportDialog({ open, onOpenChange }: CSVImportDialogProps) {
     let imported = 0
     try {
       for (const row of results) {
-        if (!row.valid || !row.accountId || !row.categoryId || !row.type || !row.amountCents || !row.date) continue
+        if (
+          !row.valid ||
+          !row.accountId ||
+          !row.categoryId ||
+          !row.type ||
+          !row.amountCents ||
+          !row.date
+        )
+          continue
         const input = {
           accountId: row.accountId,
           categoryId: row.categoryId,
@@ -90,7 +123,9 @@ export function CSVImportDialog({ open, onOpenChange }: CSVImportDialogProps) {
       reset()
       onOpenChange(false)
     } catch (err) {
-      toast.error('Import failed partway through', { description: err instanceof Error ? err.message : undefined })
+      toast.error('Import failed partway through', {
+        description: err instanceof Error ? err.message : undefined,
+      })
     } finally {
       setImporting(false)
     }
@@ -111,9 +146,17 @@ export function CSVImportDialog({ open, onOpenChange }: CSVImportDialogProps) {
 
         {!parsed ? (
           <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed p-10 text-center">
-            <Upload className="size-8 text-muted-foreground" aria-hidden="true" />
-            <p className="text-sm text-muted-foreground">Upload a CSV file exported from your bank or another app.</p>
-            <input ref={fileInputRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleFileSelect} />
+            <Upload className="text-muted-foreground size-8" aria-hidden="true" />
+            <p className="text-muted-foreground text-sm">
+              Upload a CSV file exported from your bank or another app.
+            </p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv,text/csv"
+              className="hidden"
+              onChange={handleFileSelect}
+            />
             <Button onClick={() => fileInputRef.current?.click()}>Choose File</Button>
           </div>
         ) : (
@@ -121,8 +164,18 @@ export function CSVImportDialog({ open, onOpenChange }: CSVImportDialogProps) {
             <div>
               <p className="mb-2 text-sm font-medium">Map Columns</p>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                <MappingSelect label="Date *" headers={parsed.headers} value={mapping.date} onChange={(v) => setMapping((m) => ({ ...m, date: v }))} />
-                <MappingSelect label="Amount *" headers={parsed.headers} value={mapping.amount} onChange={(v) => setMapping((m) => ({ ...m, amount: v }))} />
+                <MappingSelect
+                  label="Date *"
+                  headers={parsed.headers}
+                  value={mapping.date}
+                  onChange={(v) => setMapping((m) => ({ ...m, date: v }))}
+                />
+                <MappingSelect
+                  label="Amount *"
+                  headers={parsed.headers}
+                  value={mapping.amount}
+                  onChange={(v) => setMapping((m) => ({ ...m, amount: v }))}
+                />
                 <MappingSelect
                   label="Merchant"
                   headers={parsed.headers}
@@ -135,10 +188,19 @@ export function CSVImportDialog({ open, onOpenChange }: CSVImportDialogProps) {
                   value={mapping.category}
                   onChange={(v) => setMapping((m) => ({ ...m, category: v }))}
                 />
-                <MappingSelect label="Account" headers={parsed.headers} value={mapping.account} onChange={(v) => setMapping((m) => ({ ...m, account: v }))} />
+                <MappingSelect
+                  label="Account"
+                  headers={parsed.headers}
+                  value={mapping.account}
+                  onChange={(v) => setMapping((m) => ({ ...m, account: v }))}
+                />
                 <div>
-                  <p className="mb-1 text-xs text-muted-foreground">Default Account</p>
-                  <Select value={defaultAccountId} onValueChange={(v) => setDefaultAccountId(v ?? '')} items={Object.fromEntries(accounts.map((a) => [a.id, a.name]))}>
+                  <p className="text-muted-foreground mb-1 text-xs">Default Account</p>
+                  <Select
+                    value={defaultAccountId}
+                    onValueChange={(v) => setDefaultAccountId(v ?? '')}
+                    items={Object.fromEntries(accounts.map((a) => [a.id, a.name]))}
+                  >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Choose account" />
                     </SelectTrigger>
@@ -152,9 +214,9 @@ export function CSVImportDialog({ open, onOpenChange }: CSVImportDialogProps) {
                   </Select>
                 </div>
               </div>
-              <p className="mt-2 text-xs text-muted-foreground">
-                Negative amounts import as expenses; positive amounts import as income. Amounts without a matching category fall back to
-                "Other".
+              <p className="text-muted-foreground mt-2 text-xs">
+                Negative amounts import as expenses; positive amounts import as income. Amounts
+                without a matching category fall back to "Other".
               </p>
             </div>
 
@@ -181,12 +243,16 @@ export function CSVImportDialog({ open, onOpenChange }: CSVImportDialogProps) {
                       <TableCell>{r.rowIndex + 1}</TableCell>
                       <TableCell>{r.date ? formatDisplayDate(r.date) : '-'}</TableCell>
                       <TableCell>{r.merchant || '-'}</TableCell>
-                      <TableCell>{r.amountCents != null && r.type ? formatSignedCurrency(r.amountCents, r.type) : '-'}</TableCell>
+                      <TableCell>
+                        {r.amountCents != null && r.type
+                          ? formatSignedCurrency(r.amountCents, r.type)
+                          : '-'}
+                      </TableCell>
                       <TableCell>
                         {r.valid ? (
                           <Badge variant="secondary">Valid</Badge>
                         ) : (
-                          <span className="text-xs text-destructive">{r.error}</span>
+                          <span className="text-destructive text-xs">{r.error}</span>
                         )}
                       </TableCell>
                     </TableRow>
@@ -200,7 +266,9 @@ export function CSVImportDialog({ open, onOpenChange }: CSVImportDialogProps) {
                 Choose Different File
               </Button>
               <Button onClick={handleImport} disabled={validCount === 0 || importing}>
-                {importing ? 'Importing...' : `Import ${validCount} Transaction${validCount === 1 ? '' : 's'}`}
+                {importing
+                  ? 'Importing...'
+                  : `Import ${validCount} Transaction${validCount === 1 ? '' : 's'}`}
               </Button>
             </div>
           </div>
@@ -223,7 +291,7 @@ function MappingSelect({
 }) {
   return (
     <div>
-      <p className="mb-1 text-xs text-muted-foreground">{label}</p>
+      <p className="text-muted-foreground mb-1 text-xs">{label}</p>
       <Select
         value={value ?? 'none'}
         onValueChange={(v) => onChange(v === 'none' ? null : v)}

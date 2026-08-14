@@ -30,10 +30,17 @@ function isValidAmountString(v: string): boolean {
 
 export const accountFormSchema = z
   .object({
-    name: z.string().trim().min(1, 'Account name is required').max(60, 'Keep it under 60 characters'),
+    name: z
+      .string()
+      .trim()
+      .min(1, 'Account name is required')
+      .max(60, 'Keep it under 60 characters'),
     institution: z.string().trim().max(60, 'Keep it under 60 characters'),
     type: z.enum(ACCOUNT_TYPES),
-    lastFour: z.string().trim().regex(/^\d{0,4}$/, 'Enter up to 4 digits'),
+    lastFour: z
+      .string()
+      .trim()
+      .regex(/^\d{0,4}$/, 'Enter up to 4 digits'),
     startingBalance: z
       .string()
       .trim()
@@ -50,7 +57,10 @@ export const accountFormSchema = z
   })
   .superRefine((data, ctx) => {
     if (data.type === 'credit_card') {
-      if (!isValidAmountString(data.creditLimit) || Number(data.creditLimit.replace(/,/g, '')) <= 0) {
+      if (
+        !isValidAmountString(data.creditLimit) ||
+        Number(data.creditLimit.replace(/,/g, '')) <= 0
+      ) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['creditLimit'],

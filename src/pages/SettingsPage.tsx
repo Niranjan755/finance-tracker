@@ -7,7 +7,13 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,13 +52,27 @@ export function SettingsPage() {
   const jsonInputRef = useRef<HTMLInputElement>(null)
 
   function handleExportJSON() {
-    const backup = buildBackup({ accounts, categories, transactions, transfers, recurring, budgets, settings })
+    const backup = buildBackup({
+      accounts,
+      categories,
+      transactions,
+      transfers,
+      recurring,
+      budgets,
+      settings,
+    })
     downloadBackupJSON(backup, `finance-backup-${new Date().toISOString().slice(0, 10)}.json`)
     toast.success('Backup exported')
   }
 
   function handleExportCSV() {
-    exportTransactionsToCSV(transactions, transfers, accounts, categories, `finance-transactions-${new Date().toISOString().slice(0, 10)}.csv`)
+    exportTransactionsToCSV(
+      transactions,
+      transfers,
+      accounts,
+      categories,
+      `finance-transactions-${new Date().toISOString().slice(0, 10)}.csv`,
+    )
     toast.success('CSV exported')
   }
 
@@ -64,7 +84,9 @@ export function SettingsPage() {
       await replaceAllData(backup)
       toast.success('Data restored from backup')
     } catch {
-      toast.error('Unable to restore backup', { description: 'That file doesn\'t look like a valid backup.' })
+      toast.error('Unable to restore backup', {
+        description: "That file doesn't look like a valid backup.",
+      })
     } finally {
       setRestoreFile(null)
     }
@@ -100,7 +122,11 @@ export function SettingsPage() {
 
         <Section title="Currency">
           <Field label="Default Currency">
-            <Select value={settings.currency} onValueChange={(v) => v && updateSettings({ currency: v as never })} items={Object.fromEntries(CURRENCIES.map((c) => [c.code, `${c.code} - ${c.name}`]))}>
+            <Select
+              value={settings.currency}
+              onValueChange={(v) => v && updateSettings({ currency: v as never })}
+              items={Object.fromEntries(CURRENCIES.map((c) => [c.code, `${c.code} - ${c.name}`]))}
+            >
               <SelectTrigger className="w-full max-w-xs">
                 <SelectValue />
               </SelectTrigger>
@@ -137,29 +163,44 @@ export function SettingsPage() {
           <NotificationRow
             label="Upcoming payments"
             checked={settings.notifications.upcomingPayments}
-            onChange={(v) => updateSettings({ notifications: { ...settings.notifications, upcomingPayments: v } })}
+            onChange={(v) =>
+              updateSettings({ notifications: { ...settings.notifications, upcomingPayments: v } })
+            }
           />
           <NotificationRow
             label="Budget alerts"
             checked={settings.notifications.budgetAlerts}
-            onChange={(v) => updateSettings({ notifications: { ...settings.notifications, budgetAlerts: v } })}
+            onChange={(v) =>
+              updateSettings({ notifications: { ...settings.notifications, budgetAlerts: v } })
+            }
           />
           <NotificationRow
             label="Recurring transactions"
             checked={settings.notifications.recurringTransactions}
-            onChange={(v) => updateSettings({ notifications: { ...settings.notifications, recurringTransactions: v } })}
+            onChange={(v) =>
+              updateSettings({
+                notifications: { ...settings.notifications, recurringTransactions: v },
+              })
+            }
           />
           <NotificationRow
             label="Monthly reports"
             checked={settings.notifications.monthlyReports}
-            onChange={(v) => updateSettings({ notifications: { ...settings.notifications, monthlyReports: v } })}
+            onChange={(v) =>
+              updateSettings({ notifications: { ...settings.notifications, monthlyReports: v } })
+            }
           />
           <div className="mt-4 flex items-center justify-between border-t pt-4">
             <div>
               <p className="text-sm font-medium">Automatically post due recurring transactions</p>
-              <p className="text-xs text-muted-foreground">When off, they only appear as projected until you record them.</p>
+              <p className="text-muted-foreground text-xs">
+                When off, they only appear as projected until you record them.
+              </p>
             </div>
-            <Switch checked={settings.autoGenerateRecurring} onCheckedChange={(v) => updateSettings({ autoGenerateRecurring: v })} />
+            <Switch
+              checked={settings.autoGenerateRecurring}
+              onCheckedChange={(v) => updateSettings({ autoGenerateRecurring: v })}
+            />
           </div>
         </Section>
 
@@ -193,26 +234,39 @@ export function SettingsPage() {
                   if (file) setRestoreFile(file)
                 }}
               />
-              <Button variant="outline" onClick={() => jsonInputRef.current?.click()} className="gap-1.5">
+              <Button
+                variant="outline"
+                onClick={() => jsonInputRef.current?.click()}
+                className="gap-1.5"
+              >
                 <Upload className="size-4" aria-hidden="true" />
                 Restore JSON Backup
               </Button>
             </div>
 
             <div className="flex flex-wrap gap-2 border-t pt-3">
-              <Button variant="outline" onClick={() => setDemoConfirmOpen(true)} className="gap-1.5">
+              <Button
+                variant="outline"
+                onClick={() => setDemoConfirmOpen(true)}
+                className="gap-1.5"
+              >
                 <Sparkles className="size-4" aria-hidden="true" />
                 Load Demo Data
               </Button>
-              <Button variant="outline" onClick={() => setClearConfirmOpen(true)} className="gap-1.5 text-destructive">
+              <Button
+                variant="outline"
+                onClick={() => setClearConfirmOpen(true)}
+                className="text-destructive gap-1.5"
+              >
                 <Trash2 className="size-4" aria-hidden="true" />
                 Clear All Data
               </Button>
             </div>
 
-            <p className="flex items-start gap-2 rounded-lg border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+            <p className="bg-muted/40 text-muted-foreground flex items-start gap-2 rounded-lg border px-3 py-2 text-xs">
               <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-              Your financial data is stored locally on this device/browser. Export a backup regularly if the data is important to you.
+              Your financial data is stored locally on this device/browser. Export a backup
+              regularly if the data is important to you.
             </p>
           </div>
         </Section>
@@ -224,7 +278,9 @@ export function SettingsPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Restore from backup?</AlertDialogTitle>
-            <AlertDialogDescription>This will replace your current local data with the contents of this backup file.</AlertDialogDescription>
+            <AlertDialogDescription>
+              This will replace your current local data with the contents of this backup file.
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -237,7 +293,10 @@ export function SettingsPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Load demo data?</AlertDialogTitle>
-            <AlertDialogDescription>This replaces your current accounts, transactions, transfers, and budgets with sample data.</AlertDialogDescription>
+            <AlertDialogDescription>
+              This replaces your current accounts, transactions, transfers, and budgets with sample
+              data.
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -251,8 +310,8 @@ export function SettingsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Clear all data?</AlertDialogTitle>
             <AlertDialogDescription>
-              This permanently deletes every account, transaction, transfer, and budget on this device. This can't be undone - export a
-              backup first if you might need this data.
+              This permanently deletes every account, transaction, transfer, and budget on this
+              device. This can't be undone - export a backup first if you might need this data.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -283,7 +342,15 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   )
 }
 
-function NotificationRow({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+function NotificationRow({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string
+  checked: boolean
+  onChange: (v: boolean) => void
+}) {
   return (
     <div className="flex items-center justify-between py-1.5">
       <p className="text-sm">{label}</p>

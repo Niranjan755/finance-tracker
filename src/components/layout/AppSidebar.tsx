@@ -20,7 +20,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="hidden md:flex">
       <SidebarHeader className="gap-3 px-3 py-3">
         <div className="flex items-center gap-2 px-1">
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+          <div className="bg-primary text-primary-foreground flex size-8 shrink-0 items-center justify-center rounded-lg">
             <Wallet2 className="size-4.5" aria-hidden="true" />
           </div>
           <span className="truncate text-sm font-semibold group-data-[collapsible=icon]:hidden">

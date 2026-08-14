@@ -3,7 +3,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { CategorySelector } from '@/features/transactions/CategorySelector'
 import {
@@ -25,7 +31,13 @@ interface RecurringFormProps {
   onCancel: () => void
 }
 
-export function RecurringForm({ accounts, categories, recurring, onSubmit, onCancel }: RecurringFormProps) {
+export function RecurringForm({
+  accounts,
+  categories,
+  recurring,
+  onSubmit,
+  onCancel,
+}: RecurringFormProps) {
   const {
     register,
     handleSubmit,
@@ -92,8 +104,16 @@ export function RecurringForm({ accounts, categories, recurring, onSubmit, onCan
           <Field>
             <FieldLabel htmlFor="rec-amount">Amount</FieldLabel>
             <div className="relative">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-              <Input id="rec-amount" inputMode="decimal" placeholder="0.00" className="pl-6" {...register('amount')} />
+              <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2">
+                $
+              </span>
+              <Input
+                id="rec-amount"
+                inputMode="decimal"
+                placeholder="0.00"
+                className="pl-6"
+                {...register('amount')}
+              />
             </div>
             <FieldError errors={[errors.amount]} />
           </Field>
@@ -103,7 +123,11 @@ export function RecurringForm({ accounts, categories, recurring, onSubmit, onCan
               name="frequency"
               control={control}
               render={({ field }) => (
-                <Select value={field.value} onValueChange={(v) => field.onChange(v ?? 'monthly')} items={FREQUENCY_LABELS}>
+                <Select
+                  value={field.value}
+                  onValueChange={(v) => field.onChange(v ?? 'monthly')}
+                  items={FREQUENCY_LABELS}
+                >
                   <SelectTrigger id="rec-frequency" className="w-full">
                     <SelectValue />
                   </SelectTrigger>
@@ -153,7 +177,13 @@ export function RecurringForm({ accounts, categories, recurring, onSubmit, onCan
             name="categoryId"
             control={control}
             render={({ field }) => (
-              <CategorySelector id="rec-category" categories={categories} type={type} value={field.value} onChange={field.onChange} />
+              <CategorySelector
+                id="rec-category"
+                categories={categories}
+                type={type}
+                value={field.value}
+                onChange={field.onChange}
+              />
             )}
           />
           <FieldError errors={[errors.categoryId]} />

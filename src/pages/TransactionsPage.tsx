@@ -10,8 +10,21 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { TransactionDetailSheet } from '@/features/transactions/TransactionDetailSheet'
 import { TransferDetailSheet } from '@/features/transactions/TransferDetailSheet'
 import { useFinanceStore } from '@/store/financeStore'
@@ -21,8 +34,22 @@ import { toCents } from '@/lib/money'
 import type { Currency, Transaction, Transfer } from '@/types'
 
 type Row =
-  | { id: string; kind: 'transaction'; date: string; amountCents: number; createdAt: string; transaction: Transaction }
-  | { id: string; kind: 'transfer'; date: string; amountCents: number; createdAt: string; transfer: Transfer }
+  | {
+      id: string
+      kind: 'transaction'
+      date: string
+      amountCents: number
+      createdAt: string
+      transaction: Transaction
+    }
+  | {
+      id: string
+      kind: 'transfer'
+      date: string
+      amountCents: number
+      createdAt: string
+      transfer: Transfer
+    }
 
 interface Filters {
   search: string
@@ -69,7 +96,10 @@ export function TransactionsPage() {
 
   const categoryById = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories])
   const accountById = useMemo(() => new Map(accounts.map((a) => [a.id, a])), [accounts])
-  const allTags = useMemo(() => [...new Set(transactions.flatMap((t) => t.tags))].sort(), [transactions])
+  const allTags = useMemo(
+    () => [...new Set(transactions.flatMap((t) => t.tags))].sort(),
+    [transactions],
+  )
 
   useEffect(() => {
     const highlightId = searchParams.get('highlight')
@@ -115,11 +145,20 @@ export function TransactionsPage() {
     return allRows.filter((row) => {
       if (filters.type !== 'all') {
         if (filters.type === 'transfer' && row.kind !== 'transfer') return false
-        if (filters.type !== 'transfer' && (row.kind !== 'transaction' || row.transaction.type !== filters.type)) return false
+        if (
+          filters.type !== 'transfer' &&
+          (row.kind !== 'transaction' || row.transaction.type !== filters.type)
+        )
+          return false
       }
       if (filters.accountId !== 'all') {
-        if (row.kind === 'transaction' && row.transaction.accountId !== filters.accountId) return false
-        if (row.kind === 'transfer' && row.transfer.fromAccountId !== filters.accountId && row.transfer.toAccountId !== filters.accountId)
+        if (row.kind === 'transaction' && row.transaction.accountId !== filters.accountId)
+          return false
+        if (
+          row.kind === 'transfer' &&
+          row.transfer.fromAccountId !== filters.accountId &&
+          row.transfer.toAccountId !== filters.accountId
+        )
           return false
       }
       if (filters.categoryId !== 'all') {
@@ -146,7 +185,8 @@ export function TransactionsPage() {
 
   const sortedRows = useMemo(() => {
     const sorted = filteredRows.slice().sort((a, b) => {
-      const primary = sortKey === 'date' ? a.date.localeCompare(b.date) : a.amountCents - b.amountCents
+      const primary =
+        sortKey === 'date' ? a.date.localeCompare(b.date) : a.amountCents - b.amountCents
       const result = primary !== 0 ? primary : a.createdAt.localeCompare(b.createdAt)
       return sortDir === 'asc' ? result : -result
     })
@@ -154,7 +194,9 @@ export function TransactionsPage() {
   }, [filteredRows, sortKey, sortDir])
 
   const visibleRows = sortedRows.slice(0, visibleCount)
-  const activeFilterCount = Object.entries(filters).filter(([key, v]) => key !== 'search' && v && v !== 'all').length
+  const activeFilterCount = Object.entries(filters).filter(
+    ([key, v]) => key !== 'search' && v && v !== 'all',
+  ).length
 
   function updateFilter<K extends keyof Filters>(key: K, value: Filters[K]) {
     setFilters((f) => ({ ...f, [key]: value }))
@@ -177,11 +219,18 @@ export function TransactionsPage() {
 
   return (
     <div>
-      <PageHeader title="Transactions" description={`${sortedRows.length} transaction${sortedRows.length === 1 ? '' : 's'}`} actions={<AddTransactionMenu />} />
+      <PageHeader
+        title="Transactions"
+        description={`${sortedRows.length} transaction${sortedRows.length === 1 ? '' : 's'}`}
+        actions={<AddTransactionMenu />}
+      />
 
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+          <Search
+            className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
+            aria-hidden="true"
+          />
           <Input
             placeholder="Search transactions..."
             className="pl-9"
@@ -209,7 +258,12 @@ export function TransactionsPage() {
               <Select
                 value={filters.type}
                 onValueChange={(v) => updateFilter('type', (v ?? 'all') as Filters['type'])}
-                items={{ all: 'All Types', expense: 'Expense', income: 'Income', transfer: 'Transfer' }}
+                items={{
+                  all: 'All Types',
+                  expense: 'Expense',
+                  income: 'Income',
+                  transfer: 'Transfer',
+                }}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Type" />
@@ -224,7 +278,10 @@ export function TransactionsPage() {
               <Select
                 value={filters.accountId}
                 onValueChange={(v) => updateFilter('accountId', v ?? 'all')}
-                items={{ all: 'All Accounts', ...Object.fromEntries(accounts.map((a) => [a.id, a.name])) }}
+                items={{
+                  all: 'All Accounts',
+                  ...Object.fromEntries(accounts.map((a) => [a.id, a.name])),
+                }}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Account" />
@@ -242,7 +299,10 @@ export function TransactionsPage() {
             <Select
               value={filters.categoryId}
               onValueChange={(v) => updateFilter('categoryId', v ?? 'all')}
-              items={{ all: 'All Categories', ...Object.fromEntries(categories.map((c) => [c.id, c.name])) }}
+              items={{
+                all: 'All Categories',
+                ...Object.fromEntries(categories.map((c) => [c.id, c.name])),
+              }}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Category" />
@@ -276,12 +336,32 @@ export function TransactionsPage() {
               </Select>
             )}
             <div className="grid grid-cols-2 gap-2">
-              <Input type="date" aria-label="From date" value={filters.dateFrom} onChange={(e) => updateFilter('dateFrom', e.target.value)} />
-              <Input type="date" aria-label="To date" value={filters.dateTo} onChange={(e) => updateFilter('dateTo', e.target.value)} />
+              <Input
+                type="date"
+                aria-label="From date"
+                value={filters.dateFrom}
+                onChange={(e) => updateFilter('dateFrom', e.target.value)}
+              />
+              <Input
+                type="date"
+                aria-label="To date"
+                value={filters.dateTo}
+                onChange={(e) => updateFilter('dateTo', e.target.value)}
+              />
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <Input placeholder="Min amount" inputMode="decimal" value={filters.amountMin} onChange={(e) => updateFilter('amountMin', e.target.value)} />
-              <Input placeholder="Max amount" inputMode="decimal" value={filters.amountMax} onChange={(e) => updateFilter('amountMax', e.target.value)} />
+              <Input
+                placeholder="Min amount"
+                inputMode="decimal"
+                value={filters.amountMin}
+                onChange={(e) => updateFilter('amountMin', e.target.value)}
+              />
+              <Input
+                placeholder="Max amount"
+                inputMode="decimal"
+                value={filters.amountMax}
+                onChange={(e) => updateFilter('amountMax', e.target.value)}
+              />
             </div>
             <Button variant="ghost" size="sm" className="w-full gap-1.5" onClick={clearFilters}>
               <X className="size-3.5" aria-hidden="true" />
@@ -294,14 +374,24 @@ export function TransactionsPage() {
       {sortedRows.length === 0 ? (
         <EmptyState
           icon={Receipt}
-          title={transactions.length === 0 && transfers.length === 0 ? 'No transactions yet' : 'No matching transactions'}
+          title={
+            transactions.length === 0 && transfers.length === 0
+              ? 'No transactions yet'
+              : 'No matching transactions'
+          }
           description={
             transactions.length === 0 && transfers.length === 0
               ? 'Start tracking your finances by adding your first transaction.'
               : 'Try adjusting your search or filters.'
           }
           action={
-            transactions.length === 0 && transfers.length === 0 ? <AddTransactionMenu /> : <Button variant="outline" onClick={clearFilters}>Clear Filters</Button>
+            transactions.length === 0 && transfers.length === 0 ? (
+              <AddTransactionMenu />
+            ) : (
+              <Button variant="outline" onClick={clearFilters}>
+                Clear Filters
+              </Button>
+            )
           }
         />
       ) : (
@@ -311,7 +401,11 @@ export function TransactionsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>
-                    <button type="button" onClick={() => toggleSort('date')} className="flex items-center gap-1 hover:text-foreground">
+                    <button
+                      type="button"
+                      onClick={() => toggleSort('date')}
+                      className="hover:text-foreground flex items-center gap-1"
+                    >
                       Date <ArrowUpDown className="size-3" aria-hidden="true" />
                     </button>
                   </TableHead>
@@ -320,7 +414,11 @@ export function TransactionsPage() {
                   <TableHead>Account</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead className="text-right">
-                    <button type="button" onClick={() => toggleSort('amount')} className="ml-auto flex items-center gap-1 hover:text-foreground">
+                    <button
+                      type="button"
+                      onClick={() => toggleSort('amount')}
+                      className="hover:text-foreground ml-auto flex items-center gap-1"
+                    >
                       Amount <ArrowUpDown className="size-3" aria-hidden="true" />
                     </button>
                   </TableHead>
@@ -331,28 +429,58 @@ export function TransactionsPage() {
                   <TableRow
                     key={row.id}
                     className="cursor-pointer"
-                    onClick={() => (row.kind === 'transaction' ? setSelectedTransaction(row.transaction) : setSelectedTransfer(row.transfer))}
+                    onClick={() =>
+                      row.kind === 'transaction'
+                        ? setSelectedTransaction(row.transaction)
+                        : setSelectedTransfer(row.transfer)
+                    }
                   >
-                    <TableCell className="whitespace-nowrap text-muted-foreground">{formatDisplayDate(row.date)}</TableCell>
-                    <TableCell className="font-medium">
-                      {row.kind === 'transaction' ? row.transaction.merchant || categoryById.get(row.transaction.categoryId)?.name || 'Transaction' : row.transfer.description || 'Transfer'}
+                    <TableCell className="text-muted-foreground whitespace-nowrap">
+                      {formatDisplayDate(row.date)}
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{row.kind === 'transaction' ? categoryById.get(row.transaction.categoryId)?.name : '-'}</TableCell>
+                    <TableCell className="font-medium">
+                      {row.kind === 'transaction'
+                        ? row.transaction.merchant ||
+                          categoryById.get(row.transaction.categoryId)?.name ||
+                          'Transaction'
+                        : row.transfer.description || 'Transfer'}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {row.kind === 'transaction'
+                        ? categoryById.get(row.transaction.categoryId)?.name
+                        : '-'}
+                    </TableCell>
                     <TableCell className="text-muted-foreground">
                       {row.kind === 'transaction'
                         ? accountById.get(row.transaction.accountId)?.name
                         : `${accountById.get(row.transfer.fromAccountId)?.name ?? '?'} → ${accountById.get(row.transfer.toAccountId)?.name ?? '?'}`}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={row.kind === 'transfer' ? 'outline' : row.transaction.type === 'income' ? 'default' : 'secondary'}>
-                        {row.kind === 'transfer' ? 'Transfer' : row.transaction.type === 'income' ? 'Income' : 'Expense'}
+                      <Badge
+                        variant={
+                          row.kind === 'transfer'
+                            ? 'outline'
+                            : row.transaction.type === 'income'
+                              ? 'default'
+                              : 'secondary'
+                        }
+                      >
+                        {row.kind === 'transfer'
+                          ? 'Transfer'
+                          : row.transaction.type === 'income'
+                            ? 'Income'
+                            : 'Expense'}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
                       <MoneyText
                         cents={row.amountCents}
                         kind={row.kind === 'transfer' ? 'neutral' : row.transaction.type}
-                        currency={row.kind === 'transaction' ? accountById.get(row.transaction.accountId)?.currency : undefined}
+                        currency={
+                          row.kind === 'transaction'
+                            ? accountById.get(row.transaction.accountId)?.currency
+                            : undefined
+                        }
                       />
                     </TableCell>
                   </TableRow>
@@ -366,9 +494,15 @@ export function TransactionsPage() {
               row.kind === 'transaction' ? (
                 <MobileRow
                   key={row.id}
-                  icon={getIcon(categoryById.get(row.transaction.categoryId)?.icon ?? 'circle-dashed')}
+                  icon={getIcon(
+                    categoryById.get(row.transaction.categoryId)?.icon ?? 'circle-dashed',
+                  )}
                   color={categoryById.get(row.transaction.categoryId)?.color}
-                  title={row.transaction.merchant || categoryById.get(row.transaction.categoryId)?.name || 'Transaction'}
+                  title={
+                    row.transaction.merchant ||
+                    categoryById.get(row.transaction.categoryId)?.name ||
+                    'Transaction'
+                  }
                   subtitle={`${categoryById.get(row.transaction.categoryId)?.name ?? ''} · ${formatDisplayDate(row.date)}`}
                   amountCents={row.amountCents}
                   kind={row.transaction.type}
@@ -399,7 +533,10 @@ export function TransactionsPage() {
         </>
       )}
 
-      <TransactionDetailSheet transaction={selectedTransaction} onClose={() => setSelectedTransaction(null)} />
+      <TransactionDetailSheet
+        transaction={selectedTransaction}
+        onClose={() => setSelectedTransaction(null)}
+      />
       <TransferDetailSheet transfer={selectedTransfer} onClose={() => setSelectedTransfer(null)} />
     </div>
   )
@@ -425,15 +562,27 @@ function MobileRow({
   onClick: () => void
 }) {
   return (
-    <button type="button" onClick={onClick} className="flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left hover:bg-accent">
-      <div className="flex size-9 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: `${color ?? '#6b7280'}1a`, color: color ?? '#6b7280' }}>
+    <button
+      type="button"
+      onClick={onClick}
+      className="hover:bg-accent flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left"
+    >
+      <div
+        className="flex size-9 shrink-0 items-center justify-center rounded-full"
+        style={{ backgroundColor: `${color ?? '#6b7280'}1a`, color: color ?? '#6b7280' }}
+      >
         <Icon className="size-4" aria-hidden="true" />
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{title}</p>
-        <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
+        <p className="text-muted-foreground truncate text-xs">{subtitle}</p>
       </div>
-      <MoneyText cents={amountCents} kind={kind} currency={currency} className="shrink-0 text-sm font-medium" />
+      <MoneyText
+        cents={amountCents}
+        kind={kind}
+        currency={currency}
+        className="shrink-0 text-sm font-medium"
+      />
     </button>
   )
 }

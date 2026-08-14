@@ -118,15 +118,17 @@ export function generateMonthlyStatementPDF(input: StatementPDFInput): jsPDF {
     body: accounts.map((a) => [
       a.name,
       a.type,
-      a.type === 'credit_card' ? `-${formatCurrency(a.balanceCents, a.currency)}` : formatCurrency(a.balanceCents, a.currency),
+      a.type === 'credit_card'
+        ? `-${formatCurrency(a.balanceCents, a.currency)}`
+        : formatCurrency(a.balanceCents, a.currency),
     ]),
     styles: { fontSize: 10 },
     headStyles: { fillColor: [16, 24, 40] },
     columnStyles: { 2: { halign: 'right' } },
   })
 
-  const allTransactions = [...statement.incomeTransactions, ...statement.expenseTransactions].sort((a, b) =>
-    a.date.localeCompare(b.date),
+  const allTransactions = [...statement.incomeTransactions, ...statement.expenseTransactions].sort(
+    (a, b) => a.date.localeCompare(b.date),
   )
   if (allTransactions.length > 0) {
     doc.addPage()

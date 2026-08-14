@@ -42,7 +42,11 @@ export async function updateRecurring(
 ): Promise<RecurringTransaction> {
   const existing = (await getAllFromStore('recurring')).find((r) => r.id === id)
   if (!existing) throw new Error('Recurring transaction not found')
-  const updated: RecurringTransaction = { ...existing, ...patch, updatedAt: new Date().toISOString() }
+  const updated: RecurringTransaction = {
+    ...existing,
+    ...patch,
+    updatedAt: new Date().toISOString(),
+  }
   await putInStore('recurring', updated)
   return updated
 }
@@ -70,7 +74,9 @@ export async function recordRecurringNow(id: string, date = todayISODate()) {
     recurringId: recurring.id,
   })
 
-  const nextRunDate = toISODate(advanceByFrequency(parseISODate(recurring.nextRunDate), recurring.frequency))
+  const nextRunDate = toISODate(
+    advanceByFrequency(parseISODate(recurring.nextRunDate), recurring.frequency),
+  )
   await putInStore('recurring', { ...recurring, nextRunDate, updatedAt: new Date().toISOString() })
 
   return transaction
@@ -89,7 +95,11 @@ export async function generateDueOccurrences(today = todayISODate()): Promise<nu
     if (!recurring.isActive) continue
     let cursor = recurring
     let guard = 0
-    while (cursor.nextRunDate <= today && (!cursor.endDate || cursor.nextRunDate <= cursor.endDate) && guard < 60) {
+    while (
+      cursor.nextRunDate <= today &&
+      (!cursor.endDate || cursor.nextRunDate <= cursor.endDate) &&
+      guard < 60
+    ) {
       await createTransaction({
         accountId: cursor.accountId,
         categoryId: cursor.categoryId,
@@ -99,7 +109,9 @@ export async function generateDueOccurrences(today = todayISODate()): Promise<nu
         merchant: cursor.name,
         recurringId: cursor.id,
       })
-      const nextRunDate = toISODate(advanceByFrequency(parseISODate(cursor.nextRunDate), cursor.frequency))
+      const nextRunDate = toISODate(
+        advanceByFrequency(parseISODate(cursor.nextRunDate), cursor.frequency),
+      )
       cursor = { ...cursor, nextRunDate, updatedAt: new Date().toISOString() }
       postedCount += 1
       guard += 1

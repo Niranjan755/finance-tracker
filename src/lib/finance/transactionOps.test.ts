@@ -8,7 +8,11 @@ beforeEach(resetTestDB)
 
 describe('createTransaction - expense', () => {
   it('subtracts from a checking account balance', async () => {
-    const account = await seedAccount({ id: 'checking', type: 'checking', balanceCents: toCents('1000') })
+    const account = await seedAccount({
+      id: 'checking',
+      type: 'checking',
+      balanceCents: toCents('1000'),
+    })
 
     await createTransaction({
       accountId: account.id,

@@ -58,8 +58,16 @@ export function TransferForm({ accounts, transfer, onSubmit, onCancel }: Transfe
         <Field>
           <FieldLabel htmlFor="transfer-amount">Amount</FieldLabel>
           <div className="relative">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-            <Input id="transfer-amount" inputMode="decimal" placeholder="0.00" className="pl-6 text-lg font-medium" {...register('amount')} />
+            <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2">
+              $
+            </span>
+            <Input
+              id="transfer-amount"
+              inputMode="decimal"
+              placeholder="0.00"
+              className="pl-6 text-lg font-medium"
+              {...register('amount')}
+            />
           </div>
           <FieldError errors={[errors.amount]} />
         </Field>
@@ -82,7 +90,7 @@ export function TransferForm({ accounts, transfer, onSubmit, onCancel }: Transfe
           <FieldError errors={[errors.fromAccountId]} />
         </Field>
 
-        <div className="flex justify-center text-muted-foreground" aria-hidden="true">
+        <div className="text-muted-foreground flex justify-center" aria-hidden="true">
           <ArrowDown className="size-4" />
         </div>
 
@@ -105,8 +113,9 @@ export function TransferForm({ accounts, transfer, onSubmit, onCancel }: Transfe
         </Field>
 
         {toAccount?.type === 'credit_card' && (
-          <p className="rounded-lg border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-            This will be recorded as a credit card payment - it reduces the card's balance and won't count as spending.
+          <p className="bg-muted/40 text-muted-foreground rounded-lg border px-3 py-2 text-xs">
+            This will be recorded as a credit card payment - it reduces the card's balance and won't
+            count as spending.
           </p>
         )}
 
@@ -118,7 +127,11 @@ export function TransferForm({ accounts, transfer, onSubmit, onCancel }: Transfe
           </Field>
           <Field>
             <FieldLabel htmlFor="transfer-description">Description (optional)</FieldLabel>
-            <Input id="transfer-description" placeholder="Savings deposit" {...register('description')} />
+            <Input
+              id="transfer-description"
+              placeholder="Savings deposit"
+              {...register('description')}
+            />
           </Field>
         </div>
       </FieldGroup>

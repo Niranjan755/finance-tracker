@@ -54,7 +54,12 @@ export function ReportsPage() {
     const stop = new Date(earliest.getFullYear(), earliest.getMonth(), 1)
     while (cursor >= stop) {
       const bounds = getMonthBounds(cursor.getFullYear(), cursor.getMonth() + 1)
-      options.push({ year: bounds.year, month: bounds.month, key: `${bounds.year}-${bounds.month}`, label: bounds.label })
+      options.push({
+        year: bounds.year,
+        month: bounds.month,
+        key: `${bounds.year}-${bounds.month}`,
+        label: bounds.label,
+      })
       cursor.setMonth(cursor.getMonth() - 1)
     }
     return options
@@ -69,11 +74,15 @@ export function ReportsPage() {
     [accounts, transactions, transfers, bounds],
   )
   const incomeBreakdown = useMemo(
-    () => (statement ? computeCategoryBreakdown(statement.incomeTransactions, categories, 'income') : []),
+    () =>
+      statement ? computeCategoryBreakdown(statement.incomeTransactions, categories, 'income') : [],
     [statement, categories],
   )
   const expenseBreakdown = useMemo(
-    () => (statement ? computeCategoryBreakdown(statement.expenseTransactions, categories, 'expense') : []),
+    () =>
+      statement
+        ? computeCategoryBreakdown(statement.expenseTransactions, categories, 'expense')
+        : [],
     [statement, categories],
   )
   const categoryById = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories])
@@ -82,12 +91,15 @@ export function ReportsPage() {
   const monthTransactions = useMemo(
     () =>
       statement
-        ? [...statement.incomeTransactions, ...statement.expenseTransactions].sort((a, b) => b.date.localeCompare(a.date))
+        ? [...statement.incomeTransactions, ...statement.expenseTransactions].sort((a, b) =>
+            b.date.localeCompare(a.date),
+          )
         : [],
     [statement],
   )
   const monthTransfers = useMemo(
-    () => (bounds ? transfers.filter((t) => t.date >= bounds.startISO && t.date <= bounds.endISO) : []),
+    () =>
+      bounds ? transfers.filter((t) => t.date >= bounds.startISO && t.date <= bounds.endISO) : [],
     [transfers, bounds],
   )
 
@@ -95,19 +107,35 @@ export function ReportsPage() {
     return (
       <div>
         <PageHeader title="Reports" description="Monthly financial statements." />
-        <EmptyState icon={FileText} title="No reports yet" description="Add some transactions to generate your first monthly statement." />
+        <EmptyState
+          icon={FileText}
+          title="No reports yet"
+          description="Add some transactions to generate your first monthly statement."
+        />
       </div>
     )
   }
 
   function handleExportCSV() {
-    exportTransactionsToCSV(monthTransactions, monthTransfers, accounts, categories, `finance-statement-${selected!.key}.csv`)
+    exportTransactionsToCSV(
+      monthTransactions,
+      monthTransfers,
+      accounts,
+      categories,
+      `finance-statement-${selected!.key}.csv`,
+    )
     toast.success('CSV exported')
   }
 
   async function handleExportExcel() {
     try {
-      await exportTransactionsToExcel(monthTransactions, monthTransfers, accounts, categories, `finance-statement-${selected!.key}.xlsx`)
+      await exportTransactionsToExcel(
+        monthTransactions,
+        monthTransfers,
+        accounts,
+        categories,
+        `finance-statement-${selected!.key}.xlsx`,
+      )
       toast.success('Excel file exported')
     } catch {
       toast.error('Unable to export Excel file')
@@ -155,7 +183,9 @@ export function ReportsPage() {
                 onClick={() => setSelectedKey(m.key)}
                 className={cn(
                   'rounded-md px-3 py-2 text-left text-sm',
-                  m.key === selected?.key ? 'bg-primary text-primary-foreground' : 'hover:bg-accent',
+                  m.key === selected?.key
+                    ? 'bg-primary text-primary-foreground'
+                    : 'hover:bg-accent',
                 )}
               >
                 {m.label}
@@ -167,14 +197,29 @@ export function ReportsPage() {
         <div className="space-y-6">
           <Card className="p-6">
             <div className="mb-6 text-center">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Financial Statement</p>
+              <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                Financial Statement
+              </p>
               <h2 className="text-2xl font-bold">{bounds.label.toUpperCase()}</h2>
             </div>
 
             <div className="grid grid-cols-2 gap-4 border-y py-4 sm:grid-cols-4">
-              <Stat label="Opening Balance" cents={statement.openingBalanceCents} currency={currency} />
-              <Stat label="Closing Balance" cents={statement.closingBalanceCents} currency={currency} />
-              <Stat label="Net Cash Flow" cents={statement.netCashFlowCents} currency={currency} colored />
+              <Stat
+                label="Opening Balance"
+                cents={statement.openingBalanceCents}
+                currency={currency}
+              />
+              <Stat
+                label="Closing Balance"
+                cents={statement.closingBalanceCents}
+                currency={currency}
+              />
+              <Stat
+                label="Net Cash Flow"
+                cents={statement.netCashFlowCents}
+                currency={currency}
+                colored
+              />
               <Stat label="Savings Rate" text={`${statement.savingsRatePercent.toFixed(1)}%`} />
             </div>
 
@@ -185,14 +230,23 @@ export function ReportsPage() {
                   {incomeBreakdown.map((e) => (
                     <div key={e.categoryId} className="flex justify-between">
                       <dt className="text-muted-foreground">{e.name}</dt>
-                      <dd className="text-emerald-600 dark:text-emerald-400">+{formatCurrency(e.amountCents, currency)}</dd>
+                      <dd className="text-emerald-600 dark:text-emerald-400">
+                        +{formatCurrency(e.amountCents, currency)}
+                      </dd>
                     </div>
                   ))}
-                  {incomeBreakdown.length === 0 && <p className="text-muted-foreground">No income this month.</p>}
+                  {incomeBreakdown.length === 0 && (
+                    <p className="text-muted-foreground">No income this month.</p>
+                  )}
                 </dl>
                 <div className="mt-2 flex justify-between border-t pt-2 text-sm font-semibold">
                   <span>Total Income</span>
-                  <MoneyText cents={statement.totalIncomeCents} kind="income" signed={false} currency={currency} />
+                  <MoneyText
+                    cents={statement.totalIncomeCents}
+                    kind="income"
+                    signed={false}
+                    currency={currency}
+                  />
                 </div>
               </div>
               <div>
@@ -201,35 +255,58 @@ export function ReportsPage() {
                   {expenseBreakdown.map((e) => (
                     <div key={e.categoryId} className="flex justify-between">
                       <dt className="text-muted-foreground">{e.name}</dt>
-                      <dd className="text-red-600 dark:text-red-400">-{formatCurrency(e.amountCents, currency)}</dd>
+                      <dd className="text-red-600 dark:text-red-400">
+                        -{formatCurrency(e.amountCents, currency)}
+                      </dd>
                     </div>
                   ))}
-                  {expenseBreakdown.length === 0 && <p className="text-muted-foreground">No expenses this month.</p>}
+                  {expenseBreakdown.length === 0 && (
+                    <p className="text-muted-foreground">No expenses this month.</p>
+                  )}
                 </dl>
                 <div className="mt-2 flex justify-between border-t pt-2 text-sm font-semibold">
                   <span>Total Expenses</span>
-                  <MoneyText cents={statement.totalExpenseCents} kind="expense" signed={false} currency={currency} />
+                  <MoneyText
+                    cents={statement.totalExpenseCents}
+                    kind="expense"
+                    signed={false}
+                    currency={currency}
+                  />
                 </div>
               </div>
             </div>
 
             {statement.largestExpense && (
-              <p className="mt-6 border-t pt-4 text-sm text-muted-foreground">
-                Largest expense: <span className="font-medium text-foreground">{statement.largestExpense.merchant || 'Transaction'}</span> -{' '}
-                {formatCurrency(statement.largestExpense.amountCents, currency)}
+              <p className="text-muted-foreground mt-6 border-t pt-4 text-sm">
+                Largest expense:{' '}
+                <span className="text-foreground font-medium">
+                  {statement.largestExpense.merchant || 'Transaction'}
+                </span>{' '}
+                - {formatCurrency(statement.largestExpense.amountCents, currency)}
               </p>
             )}
-            <p className="text-sm text-muted-foreground">{statement.transactionCount} transactions this month.</p>
+            <p className="text-muted-foreground text-sm">
+              {statement.transactionCount} transactions this month.
+            </p>
           </Card>
 
           <div>
-            <h3 className="mb-3 text-sm font-medium text-muted-foreground">Transactions</h3>
+            <h3 className="text-muted-foreground mb-3 text-sm font-medium">Transactions</h3>
             {monthTransactions.length === 0 ? (
-              <EmptyState icon={FileText} title="No transactions" description="No transactions were recorded in this month." />
+              <EmptyState
+                icon={FileText}
+                title="No transactions"
+                description="No transactions were recorded in this month."
+              />
             ) : (
               <Card className="divide-y p-1">
                 {monthTransactions.map((t) => (
-                  <TransactionRow key={t.id} transaction={t} category={categoryById.get(t.categoryId)} account={accountById.get(t.accountId)} />
+                  <TransactionRow
+                    key={t.id}
+                    transaction={t}
+                    category={categoryById.get(t.categoryId)}
+                    account={accountById.get(t.accountId)}
+                  />
                 ))}
               </Card>
             )}
@@ -255,7 +332,7 @@ function Stat({
 }) {
   return (
     <div className="text-center">
-      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="text-muted-foreground text-xs">{label}</p>
       {text ? (
         <p className="mt-1 font-semibold">{text}</p>
       ) : (

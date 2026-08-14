@@ -6,7 +6,12 @@ import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { AccountSelector } from './AccountSelector'
 import { CategorySelector } from './CategorySelector'
-import { parseTagsInput, tagsToInputString, transactionFormSchema, type TransactionFormValues } from '@/lib/validation/transaction'
+import {
+  parseTagsInput,
+  tagsToInputString,
+  transactionFormSchema,
+  type TransactionFormValues,
+} from '@/lib/validation/transaction'
 import { centsToInputValue, toCents } from '@/lib/money'
 import { todayISODate } from '@/lib/date'
 import type { Account, Category, Transaction, TransactionType } from '@/types'
@@ -75,7 +80,9 @@ export function ExpenseIncomeForm({
         <Field>
           <FieldLabel htmlFor={`${type}-amount`}>{amountLabel}</FieldLabel>
           <div className="relative">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+            <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2">
+              $
+            </span>
             <Input
               id={`${type}-amount`}
               inputMode="decimal"
@@ -111,7 +118,13 @@ export function ExpenseIncomeForm({
             name="categoryId"
             control={control}
             render={({ field }) => (
-              <CategorySelector id={`${type}-category`} categories={categories} type={type} value={field.value} onChange={field.onChange} />
+              <CategorySelector
+                id={`${type}-category`}
+                categories={categories}
+                type={type}
+                value={field.value}
+                onChange={field.onChange}
+              />
             )}
           />
           <FieldError errors={[errors.categoryId]} />
@@ -119,8 +132,14 @@ export function ExpenseIncomeForm({
 
         <div className="grid grid-cols-2 gap-4">
           <Field>
-            <FieldLabel htmlFor={`${type}-merchant`}>{type === 'expense' ? 'Merchant' : 'Source'}</FieldLabel>
-            <Input id={`${type}-merchant`} placeholder={type === 'expense' ? 'Olive Garden' : 'Employer name'} {...register('merchant')} />
+            <FieldLabel htmlFor={`${type}-merchant`}>
+              {type === 'expense' ? 'Merchant' : 'Source'}
+            </FieldLabel>
+            <Input
+              id={`${type}-merchant`}
+              placeholder={type === 'expense' ? 'Olive Garden' : 'Employer name'}
+              {...register('merchant')}
+            />
           </Field>
           <Field>
             <FieldLabel htmlFor={`${type}-date`}>Date</FieldLabel>

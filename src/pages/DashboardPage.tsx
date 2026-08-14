@@ -15,7 +15,11 @@ import { SpendingTrendChart } from '@/features/dashboard/SpendingTrendChart'
 import { NetWorthTrendChart } from '@/features/dashboard/NetWorthTrendChart'
 import { AccountBalanceChart } from '@/features/dashboard/AccountBalanceChart'
 import { useFinanceStore } from '@/store/financeStore'
-import { computeAccountTotals, computeCategoryBreakdown, computeMonthlyStatement } from '@/lib/finance/calculations'
+import {
+  computeAccountTotals,
+  computeCategoryBreakdown,
+  computeMonthlyStatement,
+} from '@/lib/finance/calculations'
 import {
   computeAccountBalanceTrend,
   computeIncomeVsExpenseSeries,
@@ -58,9 +62,18 @@ export function DashboardPage() {
   const range = useMemo(() => rangeFromPreset(preset, new Date()), [preset])
   const months = MONTHS_FOR_PRESET[preset]
 
-  const incomeExpenseSeries = useMemo(() => computeIncomeVsExpenseSeries(transactions, today, months), [transactions, today, months])
-  const spendingTrend = useMemo(() => computeSpendingTrend(transactions, range), [transactions, range])
-  const netWorthTrend = useMemo(() => computeNetWorthTrend(accounts, transactions, today, months), [accounts, transactions, today, months])
+  const incomeExpenseSeries = useMemo(
+    () => computeIncomeVsExpenseSeries(transactions, today, months),
+    [transactions, today, months],
+  )
+  const spendingTrend = useMemo(
+    () => computeSpendingTrend(transactions, range),
+    [transactions, range],
+  )
+  const netWorthTrend = useMemo(
+    () => computeNetWorthTrend(accounts, transactions, today, months),
+    [accounts, transactions, today, months],
+  )
   const accountBalanceTrend = useMemo(
     () => computeAccountBalanceTrend(accounts, transactions, today, months),
     [accounts, transactions, today, months],
@@ -82,7 +95,10 @@ export function DashboardPage() {
   if (accounts.length === 0) {
     return (
       <div>
-        <PageHeader title="Dashboard" description="Your complete financial picture, updated in real time." />
+        <PageHeader
+          title="Dashboard"
+          description="Your complete financial picture, updated in real time."
+        />
         <EmptyState
           icon={Wallet}
           title="Welcome to Finance Tracker"
@@ -111,28 +127,45 @@ export function DashboardPage() {
         <StatCard label="Available Cash" cents={totals.availableCashCents} />
         <StatCard label="Credit Card Debt" cents={totals.creditCardDebtCents} kind="expense" />
         <Card className="p-4">
-          <p className="text-xs font-medium text-muted-foreground">Savings Rate</p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums">{statement.savingsRatePercent.toFixed(1)}%</p>
+          <p className="text-muted-foreground text-xs font-medium">Savings Rate</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums">
+            {statement.savingsRatePercent.toFixed(1)}%
+          </p>
         </Card>
       </div>
 
       <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Card className="p-4">
-          <p className="text-xs font-medium text-muted-foreground">This Month's Income</p>
-          <MoneyText cents={statement.totalIncomeCents} kind="income" signed={false} className="mt-1 block text-xl font-semibold" />
+          <p className="text-muted-foreground text-xs font-medium">This Month's Income</p>
+          <MoneyText
+            cents={statement.totalIncomeCents}
+            kind="income"
+            signed={false}
+            className="mt-1 block text-xl font-semibold"
+          />
         </Card>
         <Card className="p-4">
-          <p className="text-xs font-medium text-muted-foreground">This Month's Expenses</p>
-          <MoneyText cents={statement.totalExpenseCents} kind="expense" signed={false} className="mt-1 block text-xl font-semibold" />
+          <p className="text-muted-foreground text-xs font-medium">This Month's Expenses</p>
+          <MoneyText
+            cents={statement.totalExpenseCents}
+            kind="expense"
+            signed={false}
+            className="mt-1 block text-xl font-semibold"
+          />
         </Card>
         <Card className="p-4">
-          <p className="text-xs font-medium text-muted-foreground">Remaining This Month</p>
-          <MoneyText cents={statement.netCashFlowCents} kind={statement.netCashFlowCents >= 0 ? 'income' : 'expense'} signed className="mt-1 block text-xl font-semibold" />
+          <p className="text-muted-foreground text-xs font-medium">Remaining This Month</p>
+          <MoneyText
+            cents={statement.netCashFlowCents}
+            kind={statement.netCashFlowCents >= 0 ? 'income' : 'expense'}
+            signed
+            className="mt-1 block text-xl font-semibold"
+          />
         </Card>
       </div>
 
       <div className="mb-6 flex items-center justify-between">
-        <h3 className="text-sm font-medium text-muted-foreground">Charts</h3>
+        <h3 className="text-muted-foreground text-sm font-medium">Charts</h3>
         <DateRangeSelector value={preset} onChange={setPreset} />
       </div>
 
@@ -162,13 +195,22 @@ export function DashboardPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div>
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-sm font-medium text-muted-foreground">Recent Transactions</h3>
-            <Button variant="link" size="sm" className="h-auto p-0" onClick={() => navigate('/transactions')}>
+            <h3 className="text-muted-foreground text-sm font-medium">Recent Transactions</h3>
+            <Button
+              variant="link"
+              size="sm"
+              className="h-auto p-0"
+              onClick={() => navigate('/transactions')}
+            >
               View all
             </Button>
           </div>
           {recentTransactions.length === 0 ? (
-            <EmptyState icon={Receipt} title="No transactions yet" description="Add your first expense or income to see it here." />
+            <EmptyState
+              icon={Receipt}
+              title="No transactions yet"
+              description="Add your first expense or income to see it here."
+            />
           ) : (
             <Card className="divide-y p-1">
               {recentTransactions.map((t) => (
@@ -186,8 +228,13 @@ export function DashboardPage() {
 
         <div>
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-sm font-medium text-muted-foreground">Accounts</h3>
-            <Button variant="link" size="sm" className="h-auto p-0" onClick={() => navigate('/accounts')}>
+            <h3 className="text-muted-foreground text-sm font-medium">Accounts</h3>
+            <Button
+              variant="link"
+              size="sm"
+              className="h-auto p-0"
+              onClick={() => navigate('/accounts')}
+            >
               View all
             </Button>
           </div>
@@ -199,19 +246,27 @@ export function DashboardPage() {
                 <button
                   key={account.id}
                   onClick={() => navigate(`/accounts/${account.id}`)}
-                  className="flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left hover:bg-accent"
+                  className="hover:bg-accent flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left"
                 >
-                  <div className="flex size-9 shrink-0 items-center justify-center rounded-lg text-white" style={{ backgroundColor: account.color }}>
+                  <div
+                    className="flex size-9 shrink-0 items-center justify-center rounded-lg text-white"
+                    style={{ backgroundColor: account.color }}
+                  >
                     <Icon className="size-4" aria-hidden="true" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{account.name}</p>
-                    <p className="truncate text-xs text-muted-foreground">
+                    <p className="text-muted-foreground truncate text-xs">
                       {account.lastFour ? `••••${account.lastFour}` : account.institution}
                     </p>
                   </div>
-                  <span className={`text-sm font-medium tabular-nums ${isLiability ? 'text-red-600 dark:text-red-400' : ''}`}>
-                    {formatCurrency(isLiability ? -account.balanceCents : account.balanceCents, account.currency)}
+                  <span
+                    className={`text-sm font-medium tabular-nums ${isLiability ? 'text-red-600 dark:text-red-400' : ''}`}
+                  >
+                    {formatCurrency(
+                      isLiability ? -account.balanceCents : account.balanceCents,
+                      account.currency,
+                    )}
                   </span>
                 </button>
               )
@@ -223,11 +278,24 @@ export function DashboardPage() {
   )
 }
 
-function StatCard({ label, cents, kind = 'neutral' }: { label: string; cents: number; kind?: 'income' | 'expense' | 'neutral' }) {
+function StatCard({
+  label,
+  cents,
+  kind = 'neutral',
+}: {
+  label: string
+  cents: number
+  kind?: 'income' | 'expense' | 'neutral'
+}) {
   return (
     <Card className="p-4">
-      <p className="text-xs font-medium text-muted-foreground">{label}</p>
-      <MoneyText cents={cents} kind={kind} signed={false} className="mt-1 block text-2xl font-semibold" />
+      <p className="text-muted-foreground text-xs font-medium">{label}</p>
+      <MoneyText
+        cents={cents}
+        kind={kind}
+        signed={false}
+        className="mt-1 block text-2xl font-semibold"
+      />
     </Card>
   )
 }

@@ -1,5 +1,12 @@
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts'
-import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart'
+import {
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from '@/components/ui/chart'
 import type { MonthlyIncomeExpensePoint } from '@/lib/finance/timeSeries'
 
 const chartConfig = {

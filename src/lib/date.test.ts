@@ -34,9 +34,7 @@ describe('advanceByFrequency', () => {
   })
 
   it('advances biweekly by 14 days', () => {
-    expect(toISODate(advanceByFrequency(parseISODate('2026-08-01'), 'biweekly'))).toBe(
-      '2026-08-15',
-    )
+    expect(toISODate(advanceByFrequency(parseISODate('2026-08-01'), 'biweekly'))).toBe('2026-08-15')
   })
 
   it('advances yearly', () => {

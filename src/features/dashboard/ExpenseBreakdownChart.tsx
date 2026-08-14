@@ -1,6 +1,11 @@
 import { useNavigate } from 'react-router-dom'
 import { Cell, Pie, PieChart } from 'recharts'
-import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart'
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from '@/components/ui/chart'
 import { getIcon } from '@/lib/icons'
 import { formatCurrency } from '@/lib/money'
 import type { CategoryBreakdownEntry } from '@/lib/finance/calculations'
@@ -13,17 +18,31 @@ export function ExpenseBreakdownChart({ data }: ExpenseBreakdownChartProps) {
   const navigate = useNavigate()
 
   if (data.length === 0) {
-    return <p className="flex h-64 items-center justify-center text-sm text-muted-foreground">No expenses in this period.</p>
+    return (
+      <p className="text-muted-foreground flex h-64 items-center justify-center text-sm">
+        No expenses in this period.
+      </p>
+    )
   }
 
-  const chartConfig = Object.fromEntries(data.map((d) => [d.categoryId, { label: d.name, color: d.color }])) satisfies ChartConfig
+  const chartConfig = Object.fromEntries(
+    data.map((d) => [d.categoryId, { label: d.name, color: d.color }]),
+  ) satisfies ChartConfig
 
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
       <ChartContainer config={chartConfig} className="aspect-square h-56 w-full max-w-56 shrink-0">
         <PieChart>
           <ChartTooltip
-            content={<ChartTooltipContent nameKey="categoryId" formatter={(value, _name, item) => [`${formatCurrency(Number(value))} (${item.payload.percent}%)`, item.payload.name]} />}
+            content={
+              <ChartTooltipContent
+                nameKey="categoryId"
+                formatter={(value, _name, item) => [
+                  `${formatCurrency(Number(value))} (${item.payload.percent}%)`,
+                  item.payload.name,
+                ]}
+              />
+            }
           />
           <Pie
             data={data}
@@ -39,7 +58,12 @@ export function ExpenseBreakdownChart({ data }: ExpenseBreakdownChartProps) {
             }}
           >
             {data.map((entry) => (
-              <Cell key={entry.categoryId} fill={entry.color} stroke="var(--background)" strokeWidth={2} />
+              <Cell
+                key={entry.categoryId}
+                fill={entry.color}
+                stroke="var(--background)"
+                strokeWidth={2}
+              />
             ))}
           </Pie>
         </PieChart>
@@ -52,13 +76,18 @@ export function ExpenseBreakdownChart({ data }: ExpenseBreakdownChartProps) {
               <button
                 type="button"
                 onClick={() => navigate(`/transactions?category=${entry.categoryId}`)}
-                className="flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left text-sm hover:bg-accent"
+                className="hover:bg-accent flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left text-sm"
               >
-                <span className="flex size-6 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: `${entry.color}1a`, color: entry.color }}>
+                <span
+                  className="flex size-6 shrink-0 items-center justify-center rounded-full"
+                  style={{ backgroundColor: `${entry.color}1a`, color: entry.color }}
+                >
                   <Icon className="size-3.5" aria-hidden="true" />
                 </span>
                 <span className="flex-1 truncate">{entry.name}</span>
-                <span className="shrink-0 tabular-nums text-muted-foreground">{entry.percent}%</span>
+                <span className="text-muted-foreground shrink-0 tabular-nums">
+                  {entry.percent}%
+                </span>
               </button>
             </li>
           )

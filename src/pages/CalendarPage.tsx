@@ -42,9 +42,16 @@ export function CalendarPage() {
   const firstOfMonth = new Date(year, month - 1, 1)
   const daysInMonth = new Date(year, month, 0).getDate()
   const leadingBlanks = firstOfMonth.getDay()
-  const cells: (number | null)[] = [...Array(leadingBlanks).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)]
+  const cells: (number | null)[] = [
+    ...Array(leadingBlanks).fill(null),
+    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+  ]
 
-  const selectedDayTransactions = selectedDate ? transactions.filter((t) => t.date === selectedDate).sort((a, b) => b.createdAt.localeCompare(a.createdAt)) : []
+  const selectedDayTransactions = selectedDate
+    ? transactions
+        .filter((t) => t.date === selectedDate)
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    : []
 
   function shiftMonth(delta: number) {
     const d = new Date(year, month - 1 + delta, 1)
@@ -59,7 +66,12 @@ export function CalendarPage() {
       <PageHeader title="Calendar" description="See your income and expenses by day." />
 
       <div className="mb-4 flex items-center justify-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => shiftMonth(-1)} aria-label="Previous month">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => shiftMonth(-1)}
+          aria-label="Previous month"
+        >
           <ChevronLeft className="size-4" aria-hidden="true" />
         </Button>
         <span className="min-w-36 text-center text-sm font-medium">{bounds.label}</span>
@@ -69,10 +81,14 @@ export function CalendarPage() {
       </div>
 
       {!hasAnyTransactions ? (
-        <EmptyState icon={Receipt} title="No transactions yet" description="Your daily activity will show up here once you add transactions." />
+        <EmptyState
+          icon={Receipt}
+          title="No transactions yet"
+          description="Your daily activity will show up here once you add transactions."
+        />
       ) : (
         <div className="overflow-x-auto rounded-lg border">
-          <div className="grid min-w-[560px] grid-cols-7 border-b bg-muted/40 text-center text-xs font-medium text-muted-foreground">
+          <div className="bg-muted/40 text-muted-foreground grid min-w-[560px] grid-cols-7 border-b text-center text-xs font-medium">
             {WEEKDAYS.map((d) => (
               <div key={d} className="py-2">
                 {d}
@@ -81,7 +97,8 @@ export function CalendarPage() {
           </div>
           <div className="grid min-w-[560px] grid-cols-7">
             {cells.map((day, i) => {
-              if (day === null) return <div key={`blank-${i}`} className="min-h-24 border-b border-r bg-muted/10" />
+              if (day === null)
+                return <div key={`blank-${i}`} className="bg-muted/10 min-h-24 border-r border-b" />
               const dateISO = toISODate(new Date(year, month - 1, day))
               const totals = byDate.get(dateISO)
               const isToday = dateISO === toISODate(new Date())
@@ -91,17 +108,30 @@ export function CalendarPage() {
                   onClick={() => totals && setSelectedDate(dateISO)}
                   disabled={!totals}
                   className={cn(
-                    'min-h-24 border-b border-r p-1.5 text-left align-top transition-colors',
+                    'min-h-24 border-r border-b p-1.5 text-left align-top transition-colors',
                     totals ? 'hover:bg-accent' : 'cursor-default',
                   )}
                 >
-                  <span className={cn('flex size-6 items-center justify-center rounded-full text-xs', isToday && 'bg-primary text-primary-foreground')}>
+                  <span
+                    className={cn(
+                      'flex size-6 items-center justify-center rounded-full text-xs',
+                      isToday && 'bg-primary text-primary-foreground',
+                    )}
+                  >
                     {day}
                   </span>
                   {totals && (
                     <div className="mt-1 space-y-0.5 text-[11px] leading-tight">
-                      {totals.incomeCents > 0 && <p className="text-emerald-600 dark:text-emerald-400">+{formatCurrency(totals.incomeCents, currency)}</p>}
-                      {totals.expenseCents > 0 && <p className="text-red-600 dark:text-red-400">-{formatCurrency(totals.expenseCents, currency)}</p>}
+                      {totals.incomeCents > 0 && (
+                        <p className="text-emerald-600 dark:text-emerald-400">
+                          +{formatCurrency(totals.incomeCents, currency)}
+                        </p>
+                      )}
+                      {totals.expenseCents > 0 && (
+                        <p className="text-red-600 dark:text-red-400">
+                          -{formatCurrency(totals.expenseCents, currency)}
+                        </p>
+                      )}
                     </div>
                   )}
                 </button>
@@ -118,7 +148,12 @@ export function CalendarPage() {
           </SheetHeader>
           <div className="px-4 pb-6">
             {selectedDayTransactions.map((t) => (
-              <TransactionRow key={t.id} transaction={t} category={categoryById.get(t.categoryId)} account={accountById.get(t.accountId)} />
+              <TransactionRow
+                key={t.id}
+                transaction={t}
+                category={categoryById.get(t.categoryId)}
+                account={accountById.get(t.accountId)}
+              />
             ))}
           </div>
         </SheetContent>

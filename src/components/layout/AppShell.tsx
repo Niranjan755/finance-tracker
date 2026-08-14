@@ -11,7 +11,7 @@ export function AppShell() {
       <AppSidebar />
       <SidebarInset>
         <Header />
-        <main className="flex-1 px-3 pb-24 pt-4 sm:px-6 md:pb-10">
+        <main className="flex-1 px-3 pt-4 pb-24 sm:px-6 md:pb-10">
           <div className="mx-auto w-full max-w-6xl">
             <Outlet />
           </div>

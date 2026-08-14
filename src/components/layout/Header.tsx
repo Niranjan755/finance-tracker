@@ -11,7 +11,7 @@ export function Header() {
   )
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b bg-background/95 px-3 backdrop-blur sm:px-4">
+    <header className="bg-background/95 sticky top-0 z-30 flex h-14 items-center gap-2 border-b px-3 backdrop-blur sm:px-4">
       <SidebarTrigger className="hidden md:flex" />
       <h1 className="text-base font-semibold md:text-lg">{current?.label ?? 'Finance Tracker'}</h1>
       <div className="ml-auto flex items-center gap-2">

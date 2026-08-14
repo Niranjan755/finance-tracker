@@ -51,26 +51,32 @@ export function TransferDetailSheet({ transfer, onClose }: TransferDetailSheetPr
       <Sheet open={!!transfer} onOpenChange={(open) => !open && onClose()}>
         <SheetContent className="overflow-y-auto sm:max-w-md">
           <SheetHeader>
-            <SheetTitle>{transfer.isCreditCardPayment ? 'Credit Card Payment' : 'Transfer'}</SheetTitle>
+            <SheetTitle>
+              {transfer.isCreditCardPayment ? 'Credit Card Payment' : 'Transfer'}
+            </SheetTitle>
           </SheetHeader>
           <div className="space-y-6 px-4 pb-6">
             <div className="space-y-3 rounded-lg border p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   {FromIcon && <FromIcon className="size-4" aria-hidden="true" />}
-                  <span className="text-sm font-medium">{fromAccount?.name ?? 'Unknown account'}</span>
+                  <span className="text-sm font-medium">
+                    {fromAccount?.name ?? 'Unknown account'}
+                  </span>
                 </div>
                 <span className="text-sm font-medium text-red-600 dark:text-red-400">
                   -{formatCurrency(transfer.amountCents, fromAccount?.currency)}
                 </span>
               </div>
-              <div className="flex justify-center text-muted-foreground">
+              <div className="text-muted-foreground flex justify-center">
                 <ArrowDown className="size-4" aria-hidden="true" />
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   {ToIcon && <ToIcon className="size-4" aria-hidden="true" />}
-                  <span className="text-sm font-medium">{toAccount?.name ?? 'Unknown account'}</span>
+                  <span className="text-sm font-medium">
+                    {toAccount?.name ?? 'Unknown account'}
+                  </span>
                 </div>
                 <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
                   +{formatCurrency(transfer.amountCents, toAccount?.currency)}
@@ -91,16 +97,24 @@ export function TransferDetailSheet({ transfer, onClose }: TransferDetailSheetPr
               )}
             </dl>
 
-            <p className="rounded-lg border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+            <p className="bg-muted/40 text-muted-foreground rounded-lg border px-3 py-2 text-xs">
               Transfers move money between your own accounts and never count as income or spending.
             </p>
 
             <div className="grid grid-cols-2 gap-2">
-              <Button variant="outline" className="flex-col gap-1 py-4" onClick={() => openEditTransfer(transfer.id)}>
+              <Button
+                variant="outline"
+                className="flex-col gap-1 py-4"
+                onClick={() => openEditTransfer(transfer.id)}
+              >
                 <Pencil className="size-4" aria-hidden="true" />
                 Edit
               </Button>
-              <Button variant="outline" className="flex-col gap-1 py-4 text-destructive" onClick={() => setDeleteOpen(true)}>
+              <Button
+                variant="outline"
+                className="text-destructive flex-col gap-1 py-4"
+                onClick={() => setDeleteOpen(true)}
+              >
                 <Trash2 className="size-4" aria-hidden="true" />
                 Delete
               </Button>
@@ -113,7 +127,9 @@ export function TransferDetailSheet({ transfer, onClose }: TransferDetailSheetPr
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this transfer?</AlertDialogTitle>
-            <AlertDialogDescription>This can't be undone. Both account balances will be reversed.</AlertDialogDescription>
+            <AlertDialogDescription>
+              This can't be undone. Both account balances will be reversed.
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>

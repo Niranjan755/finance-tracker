@@ -47,7 +47,11 @@ export function computeAccountTotals(accounts: Account[]): AccountTotals {
  * on purpose: moving money between the user's own accounts never changes
  * net worth, so they need no adjustment here.
  */
-export function netWorthAsOf(accounts: Account[], transactions: Transaction[], asOfISO: string): number {
+export function netWorthAsOf(
+  accounts: Account[],
+  transactions: Transaction[],
+  asOfISO: string,
+): number {
   const current = computeAccountTotals(accounts).netWorthCents
   let adjustment = 0
   for (const t of transactions) {
@@ -91,7 +95,8 @@ export function computeMonthlyStatement(
   const closingBalanceCents = netWorthAsOf(accounts, transactions, bounds.endISO)
   const openingBalanceCents = closingBalanceCents - totalIncomeCents + totalExpenseCents
   const netCashFlowCents = totalIncomeCents - totalExpenseCents
-  const savingsRatePercent = totalIncomeCents === 0 ? 0 : percentOf(netCashFlowCents, totalIncomeCents)
+  const savingsRatePercent =
+    totalIncomeCents === 0 ? 0 : percentOf(netCashFlowCents, totalIncomeCents)
 
   const largestExpense = expenseTransactions.reduce<Transaction | null>(
     (largest, t) => (!largest || t.amountCents > largest.amountCents ? t : largest),
@@ -230,8 +235,12 @@ export function computeCashFlow(
   endISO: string,
 ): CashFlow {
   const inRange = transactions.filter((t) => isDateInRange(t.date, startISO, endISO))
-  const moneyInCents = inRange.filter((t) => t.type === 'income').reduce((s, t) => s + t.amountCents, 0)
-  const moneyOutCents = inRange.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amountCents, 0)
+  const moneyInCents = inRange
+    .filter((t) => t.type === 'income')
+    .reduce((s, t) => s + t.amountCents, 0)
+  const moneyOutCents = inRange
+    .filter((t) => t.type === 'expense')
+    .reduce((s, t) => s + t.amountCents, 0)
   const transfersCents = transfers
     .filter((t) => isDateInRange(t.date, startISO, endISO))
     .reduce((s, t) => s + t.amountCents, 0)
@@ -259,7 +268,11 @@ export function computeMerchantStats(transactions: Transaction[]): MerchantStat[
       existing.transactionCount += 1
       existing.totalSpentCents += t.amountCents
     } else {
-      byMerchant.set(t.merchant, { merchant: t.merchant, transactionCount: 1, totalSpentCents: t.amountCents })
+      byMerchant.set(t.merchant, {
+        merchant: t.merchant,
+        transactionCount: 1,
+        totalSpentCents: t.amountCents,
+      })
     }
   }
   return [...byMerchant.values()].sort((a, b) => b.totalSpentCents - a.totalSpentCents)
@@ -273,7 +286,10 @@ export interface AccountSpendingEntry {
   percent: number
 }
 
-export function computeSpendingByAccount(transactions: Transaction[], accounts: Account[]): AccountSpendingEntry[] {
+export function computeSpendingByAccount(
+  transactions: Transaction[],
+  accounts: Account[],
+): AccountSpendingEntry[] {
   const accountById = new Map(accounts.map((a) => [a.id, a]))
   const totals = new Map<string, number>()
   for (const t of transactions) {

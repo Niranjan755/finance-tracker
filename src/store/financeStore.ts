@@ -20,7 +20,11 @@ import {
   updateRecurring,
   type RecurringInput,
 } from '@/lib/finance/recurringOps'
-import { createTransaction, deleteTransaction, updateTransaction } from '@/lib/finance/transactionOps'
+import {
+  createTransaction,
+  deleteTransaction,
+  updateTransaction,
+} from '@/lib/finance/transactionOps'
 import { createTransfer, deleteTransfer } from '@/lib/finance/transferOps'
 import { attachReceipt, removeReceipt } from '@/lib/finance/receiptOps'
 import type {
@@ -94,7 +98,10 @@ interface FinanceState {
   removeBudget: (id: string) => Promise<void>
 
   addRecurring: (input: RecurringInput) => Promise<RecurringTransaction>
-  editRecurring: (id: string, patch: Partial<Omit<RecurringTransaction, 'id' | 'createdAt'>>) => Promise<void>
+  editRecurring: (
+    id: string,
+    patch: Partial<Omit<RecurringTransaction, 'id' | 'createdAt'>>,
+  ) => Promise<void>
   removeRecurring: (id: string) => Promise<void>
   postRecurringNow: (id: string) => Promise<void>
   runDueRecurring: () => Promise<number>
@@ -222,7 +229,9 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
   async editTransaction(id, input) {
     const existing = get().transactions.find((t) => t.id === id)
     const updated = await updateTransaction(id, input)
-    const touchedAccountIds = new Set([input.accountId, existing?.accountId].filter(Boolean) as string[])
+    const touchedAccountIds = new Set(
+      [input.accountId, existing?.accountId].filter(Boolean) as string[],
+    )
     const touchedAccounts = await Promise.all([...touchedAccountIds].map(refetchAccount))
     set((s) => {
       let accounts = s.accounts
@@ -265,14 +274,18 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
   async attachReceiptToTransaction(transactionId, file) {
     const receipt = await attachReceipt(transactionId, file)
     set((s) => ({
-      transactions: s.transactions.map((t) => (t.id === transactionId ? { ...t, receiptId: receipt.id } : t)),
+      transactions: s.transactions.map((t) =>
+        t.id === transactionId ? { ...t, receiptId: receipt.id } : t,
+      ),
     }))
   },
 
   async removeReceiptFromTransaction(transactionId) {
     await removeReceipt(transactionId)
     set((s) => ({
-      transactions: s.transactions.map((t) => (t.id === transactionId ? { ...t, receiptId: null } : t)),
+      transactions: s.transactions.map((t) =>
+        t.id === transactionId ? { ...t, receiptId: null } : t,
+      ),
     }))
   },
 
@@ -327,7 +340,10 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
       get().budgets.some((b) => b.categoryId === id) ||
       get().recurring.some((r) => r.categoryId === id)
     if (inUse) {
-      return { deleted: false, reason: 'This category is used by existing transactions, budgets, or recurring items.' }
+      return {
+        deleted: false,
+        reason: 'This category is used by existing transactions, budgets, or recurring items.',
+      }
     }
     await deleteFromStore('categories', id)
     set((s) => ({ categories: s.categories.filter((c) => c.id !== id) }))
@@ -439,9 +455,9 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
   async replaceAllData(data) {
     const db = await getDB()
     await Promise.all(
-      (['accounts', 'categories', 'transactions', 'transfers', 'recurring', 'budgets'] as const).map(
-        (store) => db.clear(store),
-      ),
+      (
+        ['accounts', 'categories', 'transactions', 'transfers', 'recurring', 'budgets'] as const
+      ).map((store) => db.clear(store)),
     )
     const tx = db.transaction(
       ['accounts', 'categories', 'transactions', 'transfers', 'recurring', 'budgets', 'settings'],

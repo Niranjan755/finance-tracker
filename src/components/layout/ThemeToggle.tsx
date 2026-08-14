@@ -31,10 +31,15 @@ export function ThemeToggle() {
       />
       <DropdownMenuContent align="end">
         {OPTIONS.map((option) => (
-          <DropdownMenuItem key={option.value} onClick={() => updateSettings({ theme: option.value })}>
+          <DropdownMenuItem
+            key={option.value}
+            onClick={() => updateSettings({ theme: option.value })}
+          >
             <option.icon className="size-4" aria-hidden="true" />
             {option.label}
-            {theme === option.value && <span className="ml-auto text-xs text-muted-foreground">Active</span>}
+            {theme === option.value && (
+              <span className="text-muted-foreground ml-auto text-xs">Active</span>
+            )}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

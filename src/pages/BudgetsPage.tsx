@@ -70,8 +70,14 @@ export function BudgetsPage() {
   const [deletingBudget, setDeletingBudget] = useState<Budget | null>(null)
 
   const bounds = getMonthBounds(year, month)
-  const monthBudgets = useMemo(() => budgets.filter((b) => b.year === year && b.month === month), [budgets, year, month])
-  const progress = useMemo(() => computeBudgetProgress(monthBudgets, transactions, categories), [monthBudgets, transactions, categories])
+  const monthBudgets = useMemo(
+    () => budgets.filter((b) => b.year === year && b.month === month),
+    [budgets, year, month],
+  )
+  const progress = useMemo(
+    () => computeBudgetProgress(monthBudgets, transactions, categories),
+    [monthBudgets, transactions, categories],
+  )
 
   const totalBudgetCents = monthBudgets.reduce((s, b) => s + b.amountCents, 0)
   const totalSpentCents = progress.reduce((s, p) => s + p.spentCents, 0)
@@ -98,12 +104,19 @@ export function BudgetsPage() {
         await updateBudget(editingBudget.id, { amountCents: values.amountCents })
         toast.success('Budget updated')
       } else {
-        await addBudget({ categoryId: values.categoryId, month, year, amountCents: values.amountCents })
+        await addBudget({
+          categoryId: values.categoryId,
+          month,
+          year,
+          amountCents: values.amountCents,
+        })
         toast.success('Budget created')
       }
       setFormOpen(false)
     } catch (err) {
-      toast.error('Unable to save budget', { description: err instanceof Error ? err.message : undefined })
+      toast.error('Unable to save budget', {
+        description: err instanceof Error ? err.message : undefined,
+      })
     }
   }
 
@@ -128,7 +141,12 @@ export function BudgetsPage() {
       />
 
       <div className="mb-6 flex items-center justify-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => shiftMonth(-1)} aria-label="Previous month">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => shiftMonth(-1)}
+          aria-label="Previous month"
+        >
           <ChevronLeft className="size-4" aria-hidden="true" />
         </Button>
         <span className="min-w-36 text-center text-sm font-medium">{bounds.label}</span>
@@ -142,10 +160,14 @@ export function BudgetsPage() {
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Total Budgeted</span>
             <span className="font-medium">
-              {formatCurrency(totalSpentCents, currency)} / {formatCurrency(totalBudgetCents, currency)}
+              {formatCurrency(totalSpentCents, currency)} /{' '}
+              {formatCurrency(totalBudgetCents, currency)}
             </span>
           </div>
-          <Progress value={Math.min((totalSpentCents / Math.max(totalBudgetCents, 1)) * 100, 100)} className="mt-2" />
+          <Progress
+            value={Math.min((totalSpentCents / Math.max(totalBudgetCents, 1)) * 100, 100)}
+            className="mt-2"
+          />
         </Card>
       )}
 
@@ -171,7 +193,10 @@ export function BudgetsPage() {
                   <div className="flex items-center gap-2">
                     <span
                       className="flex size-8 items-center justify-center rounded-lg"
-                      style={{ backgroundColor: `${p.category?.color ?? '#6b7280'}1a`, color: p.category?.color ?? '#6b7280' }}
+                      style={{
+                        backgroundColor: `${p.category?.color ?? '#6b7280'}1a`,
+                        color: p.category?.color ?? '#6b7280',
+                      }}
                     >
                       <Icon className="size-4" aria-hidden="true" />
                     </span>
@@ -180,14 +205,22 @@ export function BudgetsPage() {
                   <DropdownMenu>
                     <DropdownMenuTrigger
                       render={
-                        <Button variant="ghost" size="icon" className="size-8" aria-label={`Actions for ${p.category?.name}`}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-8"
+                          aria-label={`Actions for ${p.category?.name}`}
+                        >
                           <MoreVertical className="size-4" aria-hidden="true" />
                         </Button>
                       }
                     />
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => openEdit(p.budget)}>Edit</DropdownMenuItem>
-                      <DropdownMenuItem variant="destructive" onClick={() => setDeletingBudget(p.budget)}>
+                      <DropdownMenuItem
+                        variant="destructive"
+                        onClick={() => setDeletingBudget(p.budget)}
+                      >
                         Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -196,9 +229,14 @@ export function BudgetsPage() {
 
                 <div className="mt-4 flex items-baseline justify-between text-sm">
                   <span className="font-semibold">{formatCurrency(p.spentCents, currency)}</span>
-                  <span className="text-muted-foreground">of {formatCurrency(p.budget.amountCents, currency)}</span>
+                  <span className="text-muted-foreground">
+                    of {formatCurrency(p.budget.amountCents, currency)}
+                  </span>
                 </div>
-                <Progress value={Math.min(p.percentUsed, 100)} className={`mt-2 ${STATUS_BAR_CLASS[p.status]}`} />
+                <Progress
+                  value={Math.min(p.percentUsed, 100)}
+                  className={`mt-2 ${STATUS_BAR_CLASS[p.status]}`}
+                />
                 <div className="mt-2 flex items-center justify-between text-xs">
                   <span className={STATUS_TEXT_CLASS[p.status]}>{STATUS_LABEL[p.status]}</span>
                   <span className="text-muted-foreground">
@@ -229,7 +267,10 @@ export function BudgetsPage() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!deletingBudget} onOpenChange={(open) => !open && setDeletingBudget(null)}>
+      <AlertDialog
+        open={!!deletingBudget}
+        onOpenChange={(open) => !open && setDeletingBudget(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this budget?</AlertDialogTitle>

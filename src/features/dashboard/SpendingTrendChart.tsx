@@ -1,5 +1,10 @@
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts'
-import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart'
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from '@/components/ui/chart'
 import { formatCurrency } from '@/lib/money'
 import type { SpendingTrendPoint } from '@/lib/finance/timeSeries'
 
@@ -19,9 +24,27 @@ export function SpendingTrendChart({ data }: { data: SpendingTrendPoint[] }) {
         </defs>
         <CartesianGrid vertical={false} strokeDasharray="3 3" />
         <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} minTickGap={32} />
-        <YAxis tickLine={false} axisLine={false} tickMargin={8} width={48} tickFormatter={(v: number) => `$${Math.round(v / 100)}`} />
-        <ChartTooltip content={<ChartTooltipContent formatter={(value) => [formatCurrency(Number(value)), 'Spending']} />} />
-        <Area type="monotone" dataKey="expenseCents" stroke="var(--color-expenseCents)" fill="url(#spendingFill)" strokeWidth={2} />
+        <YAxis
+          tickLine={false}
+          axisLine={false}
+          tickMargin={8}
+          width={48}
+          tickFormatter={(v: number) => `$${Math.round(v / 100)}`}
+        />
+        <ChartTooltip
+          content={
+            <ChartTooltipContent
+              formatter={(value) => [formatCurrency(Number(value)), 'Spending']}
+            />
+          }
+        />
+        <Area
+          type="monotone"
+          dataKey="expenseCents"
+          stroke="var(--color-expenseCents)"
+          fill="url(#spendingFill)"
+          strokeWidth={2}
+        />
       </AreaChart>
     </ChartContainer>
   )

@@ -7,16 +7,36 @@ import { OnboardingFlow } from '@/features/onboarding/OnboardingFlow'
 import { useThemeSync } from '@/hooks/useThemeSync'
 import { useFinanceStore } from '@/store/financeStore'
 
-const DashboardPage = lazy(() => import('@/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })))
-const AccountsPage = lazy(() => import('@/pages/AccountsPage').then((m) => ({ default: m.AccountsPage })))
-const AccountDetailPage = lazy(() => import('@/pages/AccountDetailPage').then((m) => ({ default: m.AccountDetailPage })))
-const TransactionsPage = lazy(() => import('@/pages/TransactionsPage').then((m) => ({ default: m.TransactionsPage })))
-const BudgetsPage = lazy(() => import('@/pages/BudgetsPage').then((m) => ({ default: m.BudgetsPage })))
-const UpcomingPage = lazy(() => import('@/pages/UpcomingPage').then((m) => ({ default: m.UpcomingPage })))
-const ReportsPage = lazy(() => import('@/pages/ReportsPage').then((m) => ({ default: m.ReportsPage })))
-const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage').then((m) => ({ default: m.AnalyticsPage })))
-const CalendarPage = lazy(() => import('@/pages/CalendarPage').then((m) => ({ default: m.CalendarPage })))
-const SettingsPage = lazy(() => import('@/pages/SettingsPage').then((m) => ({ default: m.SettingsPage })))
+const DashboardPage = lazy(() =>
+  import('@/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })),
+)
+const AccountsPage = lazy(() =>
+  import('@/pages/AccountsPage').then((m) => ({ default: m.AccountsPage })),
+)
+const AccountDetailPage = lazy(() =>
+  import('@/pages/AccountDetailPage').then((m) => ({ default: m.AccountDetailPage })),
+)
+const TransactionsPage = lazy(() =>
+  import('@/pages/TransactionsPage').then((m) => ({ default: m.TransactionsPage })),
+)
+const BudgetsPage = lazy(() =>
+  import('@/pages/BudgetsPage').then((m) => ({ default: m.BudgetsPage })),
+)
+const UpcomingPage = lazy(() =>
+  import('@/pages/UpcomingPage').then((m) => ({ default: m.UpcomingPage })),
+)
+const ReportsPage = lazy(() =>
+  import('@/pages/ReportsPage').then((m) => ({ default: m.ReportsPage })),
+)
+const AnalyticsPage = lazy(() =>
+  import('@/pages/AnalyticsPage').then((m) => ({ default: m.AnalyticsPage })),
+)
+const CalendarPage = lazy(() =>
+  import('@/pages/CalendarPage').then((m) => ({ default: m.CalendarPage })),
+)
+const SettingsPage = lazy(() =>
+  import('@/pages/SettingsPage').then((m) => ({ default: m.SettingsPage })),
+)
 
 function LoadingScreen() {
   return (
@@ -36,7 +56,7 @@ function ErrorScreen({ message }: { message: string }) {
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-2 p-6 text-center">
       <p className="font-medium">Unable to load your data</p>
-      <p className="max-w-sm text-sm text-muted-foreground">{message}</p>
+      <p className="text-muted-foreground max-w-sm text-sm">{message}</p>
     </div>
   )
 }

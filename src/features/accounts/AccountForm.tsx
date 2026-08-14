@@ -4,11 +4,22 @@ import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { CURRENCIES, formatCurrency } from '@/lib/money'
 import { ACCOUNT_COLOR_OPTIONS, ACCOUNT_ICON_OPTIONS, getIcon } from '@/lib/icons'
 import { cn } from '@/lib/utils'
-import { ACCOUNT_TYPES, ACCOUNT_TYPE_LABELS, accountFormSchema, type AccountFormValues } from '@/lib/validation/account'
+import {
+  ACCOUNT_TYPES,
+  ACCOUNT_TYPE_LABELS,
+  accountFormSchema,
+  type AccountFormValues,
+} from '@/lib/validation/account'
 import type { Account } from '@/types'
 
 const CURRENCY_ITEMS = Object.fromEntries(CURRENCIES.map((c) => [c.code, `${c.code} - ${c.name}`]))
@@ -35,8 +46,12 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
       lastFour: account?.lastFour ?? '',
       startingBalance: account ? (account.balanceCents / 100).toFixed(2) : '',
       creditLimit: account?.creditLimitCents ? (account.creditLimitCents / 100).toFixed(2) : '',
-      statementBalance: account?.statementBalanceCents ? (account.statementBalanceCents / 100).toFixed(2) : '',
-      minimumPayment: account?.minimumPaymentCents ? (account.minimumPaymentCents / 100).toFixed(2) : '',
+      statementBalance: account?.statementBalanceCents
+        ? (account.statementBalanceCents / 100).toFixed(2)
+        : '',
+      minimumPayment: account?.minimumPaymentCents
+        ? (account.minimumPaymentCents / 100).toFixed(2)
+        : '',
       paymentDueDate: account?.paymentDueDate ?? '',
       currency: account?.currency ?? 'USD',
       icon: account?.icon ?? 'landmark',
@@ -74,7 +89,11 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
               name="type"
               control={control}
               render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange} items={ACCOUNT_TYPE_LABELS}>
+                <Select
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  items={ACCOUNT_TYPE_LABELS}
+                >
                   <SelectTrigger id="acct-type" className="w-full">
                     <SelectValue />
                   </SelectTrigger>
@@ -94,7 +113,13 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
         <div className="grid grid-cols-2 gap-4">
           <Field>
             <FieldLabel htmlFor="acct-lastfour">Last 4 Digits (optional)</FieldLabel>
-            <Input id="acct-lastfour" placeholder="4821" maxLength={4} inputMode="numeric" {...register('lastFour')} />
+            <Input
+              id="acct-lastfour"
+              placeholder="4821"
+              maxLength={4}
+              inputMode="numeric"
+              {...register('lastFour')}
+            />
             <FieldError errors={[errors.lastFour]} />
           </Field>
           <Field>
@@ -125,20 +150,35 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
             <FieldLabel htmlFor="acct-balance">
               {isCreditCard ? 'Current Balance Owed' : 'Starting Balance'}
             </FieldLabel>
-            <Input id="acct-balance" placeholder="0.00" inputMode="decimal" {...register('startingBalance')} />
+            <Input
+              id="acct-balance"
+              placeholder="0.00"
+              inputMode="decimal"
+              {...register('startingBalance')}
+            />
             <FieldError errors={[errors.startingBalance]} />
           </Field>
         ) : (
-          <div className="rounded-lg border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-            Current balance: <span className="font-medium text-foreground">{formatCurrency(account.balanceCents, account.currency)}</span>
-            <span className="block text-xs">Balance only changes from transactions, transfers, and payments.</span>
+          <div className="bg-muted/40 text-muted-foreground rounded-lg border px-3 py-2 text-sm">
+            Current balance:{' '}
+            <span className="text-foreground font-medium">
+              {formatCurrency(account.balanceCents, account.currency)}
+            </span>
+            <span className="block text-xs">
+              Balance only changes from transactions, transfers, and payments.
+            </span>
           </div>
         )}
 
         {isCreditCard && (
           <Field>
             <FieldLabel htmlFor="acct-limit">Credit Limit</FieldLabel>
-            <Input id="acct-limit" placeholder="5000" inputMode="decimal" {...register('creditLimit')} />
+            <Input
+              id="acct-limit"
+              placeholder="5000"
+              inputMode="decimal"
+              {...register('creditLimit')}
+            />
             <FieldError errors={[errors.creditLimit]} />
           </Field>
         )}
@@ -147,11 +187,21 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
           <div className="grid grid-cols-3 gap-4">
             <Field>
               <FieldLabel htmlFor="acct-statement">Statement Balance</FieldLabel>
-              <Input id="acct-statement" placeholder="0.00" inputMode="decimal" {...register('statementBalance')} />
+              <Input
+                id="acct-statement"
+                placeholder="0.00"
+                inputMode="decimal"
+                {...register('statementBalance')}
+              />
             </Field>
             <Field>
               <FieldLabel htmlFor="acct-minpay">Minimum Payment</FieldLabel>
-              <Input id="acct-minpay" placeholder="0.00" inputMode="decimal" {...register('minimumPayment')} />
+              <Input
+                id="acct-minpay"
+                placeholder="0.00"
+                inputMode="decimal"
+                {...register('minimumPayment')}
+              />
             </Field>
             <Field>
               <FieldLabel htmlFor="acct-duedate">Due Date</FieldLabel>
@@ -181,7 +231,9 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
                         onClick={() => field.onChange(iconName)}
                         className={cn(
                           'flex size-9 items-center justify-center rounded-lg border transition-colors',
-                          selected ? 'border-primary bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent',
+                          selected
+                            ? 'border-primary bg-primary/10 text-primary'
+                            : 'text-muted-foreground hover:bg-accent',
                         )}
                       >
                         <Icon className="size-4" aria-hidden="true" />
@@ -211,7 +263,7 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
                         onClick={() => field.onChange(color)}
                         className={cn(
                           'size-9 rounded-lg border-2 transition-transform',
-                          selected ? 'scale-110 border-foreground' : 'border-transparent',
+                          selected ? 'border-foreground scale-110' : 'border-transparent',
                         )}
                         style={{ backgroundColor: color }}
                       />
@@ -225,7 +277,12 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
 
         <Field>
           <FieldLabel htmlFor="acct-notes">Notes (optional)</FieldLabel>
-          <Textarea id="acct-notes" rows={2} placeholder="Add any notes about this account" {...register('notes')} />
+          <Textarea
+            id="acct-notes"
+            rows={2}
+            placeholder="Add any notes about this account"
+            {...register('notes')}
+          />
           <FieldError errors={[errors.notes]} />
         </Field>
       </FieldGroup>

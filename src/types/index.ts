@@ -1,13 +1,7 @@
 export type Currency = 'USD' | 'INR' | 'EUR' | 'GBP' | 'CAD' | 'AUD'
 
 export type AccountType =
-  | 'checking'
-  | 'savings'
-  | 'cash'
-  | 'debit_card'
-  | 'credit_card'
-  | 'investment'
-  | 'other'
+  'checking' | 'savings' | 'cash' | 'debit_card' | 'credit_card' | 'investment' | 'other'
 
 /** Account types whose balance is a liability (owed money), not an asset. */
 export const LIABILITY_ACCOUNT_TYPES: readonly AccountType[] = ['credit_card']
@@ -85,12 +79,7 @@ export interface Transfer {
 }
 
 export type RecurrenceFrequency =
-  | 'daily'
-  | 'weekly'
-  | 'biweekly'
-  | 'monthly'
-  | 'quarterly'
-  | 'yearly'
+  'daily' | 'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'yearly'
 
 export interface RecurringTransaction {
   id: string

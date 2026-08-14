@@ -77,7 +77,9 @@ describe('computeIncomeVsExpenseSeries', () => {
   })
 
   it('excludes months outside the window', () => {
-    const transactions: Transaction[] = [txn({ type: 'expense', amountCents: 100, date: '2026-01-01' })]
+    const transactions: Transaction[] = [
+      txn({ type: 'expense', amountCents: 100, date: '2026-01-01' }),
+    ]
     const series = computeIncomeVsExpenseSeries(transactions, '2026-08-14', 3)
     expect(series.reduce((s, p) => s + p.expenseCents, 0)).toBe(0)
   })
@@ -91,7 +93,10 @@ describe('computeSpendingTrend', () => {
       txn({ type: 'income', amountCents: toCents('1000'), date: '2026-08-01' }),
       txn({ type: 'expense', amountCents: toCents('10'), date: '2026-08-03' }),
     ]
-    const points = computeSpendingTrend(transactions, { startISO: '2026-08-01', endISO: '2026-08-03' })
+    const points = computeSpendingTrend(transactions, {
+      startISO: '2026-08-01',
+      endISO: '2026-08-03',
+    })
     expect(points).toHaveLength(3)
     expect(points[0]?.expenseCents).toBe(toCents('75'))
     expect(points[1]?.expenseCents).toBe(0)
@@ -118,7 +123,12 @@ describe('computeAccountBalanceTrend', () => {
   it('rolls back a checking account balance to a prior month', () => {
     const accounts = [account({ id: 'checking', balanceCents: toCents('900') })]
     const transactions: Transaction[] = [
-      txn({ accountId: 'checking', type: 'expense', amountCents: toCents('100'), date: '2026-08-05' }),
+      txn({
+        accountId: 'checking',
+        type: 'expense',
+        amountCents: toCents('100'),
+        date: '2026-08-05',
+      }),
     ]
     const trend = computeAccountBalanceTrend(accounts, transactions, '2026-08-14', 2)
     expect(trend[1]?.balances.checking).toBe(toCents('900'))

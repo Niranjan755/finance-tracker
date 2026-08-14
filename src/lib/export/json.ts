@@ -1,6 +1,14 @@
 import { z } from 'zod'
 import { downloadBlob } from './download'
-import type { Account, Budget, Category, RecurringTransaction, Settings, Transaction, Transfer } from '@/types'
+import type {
+  Account,
+  Budget,
+  Category,
+  RecurringTransaction,
+  Settings,
+  Transaction,
+  Transfer,
+} from '@/types'
 
 export interface BackupData {
   version: number

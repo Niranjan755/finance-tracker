@@ -11,7 +11,13 @@ interface AccountSelectorProps {
   excludeAccountId?: string
 }
 
-export function AccountSelector({ accounts, value, onChange, label, excludeAccountId }: AccountSelectorProps) {
+export function AccountSelector({
+  accounts,
+  value,
+  onChange,
+  label,
+  excludeAccountId,
+}: AccountSelectorProps) {
   const options = accounts.filter((a) => a.isActive && a.id !== excludeAccountId)
 
   return (
@@ -32,16 +38,26 @@ export function AccountSelector({ accounts, value, onChange, label, excludeAccou
               selected ? 'border-primary bg-primary/5' : 'hover:bg-accent',
             )}
           >
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg text-white" style={{ backgroundColor: account.color }}>
+            <div
+              className="flex size-8 shrink-0 items-center justify-center rounded-lg text-white"
+              style={{ backgroundColor: account.color }}
+            >
               <Icon className="size-4" aria-hidden="true" />
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium">
                 {account.name}
-                {account.lastFour && <span className="text-muted-foreground"> ••••{account.lastFour}</span>}
+                {account.lastFour && (
+                  <span className="text-muted-foreground"> ••••{account.lastFour}</span>
+                )}
               </p>
             </div>
-            <span className={cn('shrink-0 text-sm tabular-nums', isLiability && 'text-red-600 dark:text-red-400')}>
+            <span
+              className={cn(
+                'shrink-0 text-sm tabular-nums',
+                isLiability && 'text-red-600 dark:text-red-400',
+              )}
+            >
               {isLiability ? '-' : ''}
               {formatCurrency(account.balanceCents, account.currency)}
             </span>
@@ -51,12 +67,14 @@ export function AccountSelector({ accounts, value, onChange, label, excludeAccou
                 selected ? 'border-primary bg-primary' : 'border-muted-foreground/30',
               )}
             >
-              {selected && <span className="size-1.5 rounded-full bg-primary-foreground" />}
+              {selected && <span className="bg-primary-foreground size-1.5 rounded-full" />}
             </span>
           </button>
         )
       })}
-      {options.length === 0 && <p className="text-sm text-muted-foreground">No accounts available. Add one first.</p>}
+      {options.length === 0 && (
+        <p className="text-muted-foreground text-sm">No accounts available. Add one first.</p>
+      )}
     </div>
   )
 }
