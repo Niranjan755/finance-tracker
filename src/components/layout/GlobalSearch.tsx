@@ -20,12 +20,10 @@ export function GlobalSearch() {
   const setOpen = useUIStore((s) => s.setCommandPaletteOpen)
   const [query, setQuery] = useState('')
   const navigate = useNavigate()
-  const { accounts, categories, transactions, settings } = useFinanceStore((s) => ({
-    accounts: s.accounts,
-    categories: s.categories,
-    transactions: s.transactions,
-    settings: s.settings,
-  }))
+  const accounts = useFinanceStore((s) => s.accounts)
+  const categories = useFinanceStore((s) => s.categories)
+  const transactions = useFinanceStore((s) => s.transactions)
+  const settings = useFinanceStore((s) => s.settings)
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {

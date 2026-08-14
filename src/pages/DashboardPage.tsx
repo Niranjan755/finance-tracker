@@ -16,12 +16,10 @@ import { formatCurrency } from '@/lib/money'
 
 export function DashboardPage() {
   const navigate = useNavigate()
-  const { accounts, transactions, transfers, categories } = useFinanceStore((s) => ({
-    accounts: s.accounts,
-    transactions: s.transactions,
-    transfers: s.transfers,
-    categories: s.categories,
-  }))
+  const accounts = useFinanceStore((s) => s.accounts)
+  const transactions = useFinanceStore((s) => s.transactions)
+  const transfers = useFinanceStore((s) => s.transfers)
+  const categories = useFinanceStore((s) => s.categories)
 
   const totals = computeAccountTotals(accounts)
   const bounds = useMemo(() => {
