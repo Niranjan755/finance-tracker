@@ -134,6 +134,8 @@ function mergeAccount(accounts: Account[], updated: Account | undefined): Accoun
   return next
 }
 
+let initPromise: Promise<void> | null = null
+
 export const useFinanceStore = create<FinanceState>((set, get) => ({
   status: 'idle',
   error: null,
@@ -146,45 +148,55 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
   settings: DEFAULT_SETTINGS,
 
   async init() {
-    set({ status: 'loading', error: null })
-    try {
-      let [accounts, categories, transactions, transfers, recurring, budgets, settingsRows] =
-        await Promise.all([
-          getAllFromStore('accounts'),
-          getAllFromStore('categories'),
-          getAllFromStore('transactions'),
-          getAllFromStore('transfers'),
-          getAllFromStore('recurring'),
-          getAllFromStore('budgets'),
-          getAllFromStore('settings'),
-        ])
+    // React 19 StrictMode (and some Suspense-related re-render paths) can invoke
+    // this effect more than once. Without memoizing, a second, slower-resolving
+    // call reads a stale snapshot of settings and then overwrites in-memory state
+    // with it *after* a subsequent onboarding/settings write already landed -
+    // losing that update from the UI's perspective. Sharing one in-flight promise
+    // makes every caller observe the same, single, final result.
+    if (initPromise) return initPromise
+    initPromise = (async () => {
+      set({ status: 'loading', error: null })
+      try {
+        let [accounts, categories, transactions, transfers, recurring, budgets, settingsRows] =
+          await Promise.all([
+            getAllFromStore('accounts'),
+            getAllFromStore('categories'),
+            getAllFromStore('transactions'),
+            getAllFromStore('transfers'),
+            getAllFromStore('recurring'),
+            getAllFromStore('budgets'),
+            getAllFromStore('settings'),
+          ])
 
-      if (categories.length === 0) {
-        categories = getDefaultCategories()
-        const db = await getDB()
-        const tx = db.transaction('categories', 'readwrite')
-        await Promise.all([...categories.map((c) => tx.store.put(c)), tx.done])
+        if (categories.length === 0) {
+          categories = getDefaultCategories()
+          const db = await getDB()
+          const tx = db.transaction('categories', 'readwrite')
+          await Promise.all([...categories.map((c) => tx.store.put(c)), tx.done])
+        }
+
+        let settings = settingsRows[0]
+        if (!settings) {
+          settings = DEFAULT_SETTINGS
+          await putInStore('settings', settings)
+        }
+
+        set({
+          status: 'ready',
+          accounts,
+          categories,
+          transactions,
+          transfers,
+          recurring,
+          budgets,
+          settings,
+        })
+      } catch (err) {
+        set({ status: 'error', error: err instanceof Error ? err.message : 'Failed to load data' })
       }
-
-      let settings = settingsRows[0]
-      if (!settings) {
-        settings = DEFAULT_SETTINGS
-        await putInStore('settings', settings)
-      }
-
-      set({
-        status: 'ready',
-        accounts,
-        categories,
-        transactions,
-        transfers,
-        recurring,
-        budgets,
-        settings,
-      })
-    } catch (err) {
-      set({ status: 'error', error: err instanceof Error ? err.message : 'Failed to load data' })
-    }
+    })()
+    return initPromise
   },
 
   async addAccount(input) {
