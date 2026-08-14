@@ -10,7 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { TransactionRow } from '@/features/transactions/TransactionRow'
 import { useFinanceStore } from '@/store/financeStore'
 import { computeCategoryBreakdown, computeMonthlyStatement } from '@/lib/finance/calculations'
-import { getMonthBounds } from '@/lib/date'
+import { getMonthBounds, parseISODate } from '@/lib/date'
 import { formatCurrency } from '@/lib/money'
 import { exportTransactionsToCSV } from '@/lib/export/csv'
 import { exportTransactionsToExcel } from '@/lib/export/excel'
@@ -37,11 +37,11 @@ export function ReportsPage() {
     const now = new Date()
     let earliest = now
     for (const t of transactions) {
-      const d = new Date(t.date)
+      const d = parseISODate(t.date)
       if (d < earliest) earliest = d
     }
     for (const t of transfers) {
-      const d = new Date(t.date)
+      const d = parseISODate(t.date)
       if (d < earliest) earliest = d
     }
     for (const a of accounts) {

@@ -5,9 +5,11 @@ import type { Account, Budget, Category, Transaction, Transfer } from '@/types'
 import {
   budgetStatusFor,
   computeAccountTotals,
+  computeAverageMonthlySpending,
   computeBudgetProgress,
   computeCategoryBreakdown,
   computeMonthlyStatement,
+  computeSpendingByAccount,
 } from './calculations'
 
 function account(overrides: Partial<Account> = {}): Account {
@@ -193,5 +195,39 @@ describe('computeBudgetProgress', () => {
     ]
     const [progress] = computeBudgetProgress(budgets, transactions, categories)
     expect(progress?.spentCents).toBe(toCents('100'))
+  })
+})
+
+describe('computeSpendingByAccount', () => {
+  it('sums expenses per account and computes percentages', () => {
+    const accounts = [
+      account({ id: 'checking', color: '#111' }),
+      account({ id: 'visa', color: '#222' }),
+    ]
+    const transactions: Transaction[] = [
+      txn({ accountId: 'checking', amountCents: toCents('300') }),
+      txn({ accountId: 'visa', amountCents: toCents('100') }),
+      txn({ accountId: 'checking', type: 'income', amountCents: toCents('9999') }),
+    ]
+    const result = computeSpendingByAccount(transactions, accounts)
+    expect(result).toEqual([
+      { accountId: 'checking', name: 'Account', color: '#111', amountCents: toCents('300'), percent: 75 },
+      { accountId: 'visa', name: 'Account', color: '#222', amountCents: toCents('100'), percent: 25 },
+    ])
+  })
+})
+
+describe('computeAverageMonthlySpending', () => {
+  it('averages expense totals across distinct months', () => {
+    const transactions: Transaction[] = [
+      txn({ type: 'expense', amountCents: toCents('100'), date: '2026-06-01' }),
+      txn({ type: 'expense', amountCents: toCents('300'), date: '2026-07-01' }),
+      txn({ type: 'income', amountCents: toCents('99999'), date: '2026-07-05' }),
+    ]
+    expect(computeAverageMonthlySpending(transactions)).toBe(toCents('200'))
+  })
+
+  it('returns 0 when there is no expense data', () => {
+    expect(computeAverageMonthlySpending([])).toBe(0)
   })
 })

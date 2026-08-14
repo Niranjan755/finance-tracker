@@ -10,6 +10,8 @@ import { TransactionsPage } from '@/pages/TransactionsPage'
 import { BudgetsPage } from '@/pages/BudgetsPage'
 import { UpcomingPage } from '@/pages/UpcomingPage'
 import { ReportsPage } from '@/pages/ReportsPage'
+import { AnalyticsPage } from '@/pages/AnalyticsPage'
+import { CalendarPage } from '@/pages/CalendarPage'
 import { useThemeSync } from '@/hooks/useThemeSync'
 import { useFinanceStore } from '@/store/financeStore'
 
@@ -69,6 +71,8 @@ function AppContent() {
         <Route path="/budgets" element={<BudgetsPage />} />
         <Route path="/upcoming" element={<UpcomingPage />} />
         <Route path="/reports" element={<ReportsPage />} />
+        <Route path="/analytics" element={<AnalyticsPage />} />
+        <Route path="/calendar" element={<CalendarPage />} />
       </Route>
     </Routes>
   )

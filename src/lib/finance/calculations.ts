@@ -264,3 +264,43 @@ export function computeMerchantStats(transactions: Transaction[]): MerchantStat[
   }
   return [...byMerchant.values()].sort((a, b) => b.totalSpentCents - a.totalSpentCents)
 }
+
+export interface AccountSpendingEntry {
+  accountId: string
+  name: string
+  color: string
+  amountCents: number
+  percent: number
+}
+
+export function computeSpendingByAccount(transactions: Transaction[], accounts: Account[]): AccountSpendingEntry[] {
+  const accountById = new Map(accounts.map((a) => [a.id, a]))
+  const totals = new Map<string, number>()
+  for (const t of transactions) {
+    if (t.type !== 'expense') continue
+    totals.set(t.accountId, (totals.get(t.accountId) ?? 0) + t.amountCents)
+  }
+  const grandTotal = [...totals.values()].reduce((sum, v) => sum + v, 0)
+  return [...totals.entries()]
+    .map(([accountId, amountCents]) => ({
+      accountId,
+      name: accountById.get(accountId)?.name ?? 'Unknown',
+      color: accountById.get(accountId)?.color ?? '#6b7280',
+      amountCents,
+      percent: percentOf(amountCents, grandTotal),
+    }))
+    .sort((a, b) => b.amountCents - a.amountCents)
+}
+
+/** Average total monthly expenses across every distinct calendar month present in the data. */
+export function computeAverageMonthlySpending(transactions: Transaction[]): number {
+  const byMonth = new Map<string, number>()
+  for (const t of transactions) {
+    if (t.type !== 'expense') continue
+    const key = t.date.slice(0, 7)
+    byMonth.set(key, (byMonth.get(key) ?? 0) + t.amountCents)
+  }
+  if (byMonth.size === 0) return 0
+  const total = [...byMonth.values()].reduce((sum, v) => sum + v, 0)
+  return Math.round(total / byMonth.size)
+}
