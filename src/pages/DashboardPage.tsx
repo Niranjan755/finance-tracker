@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { LandmarkIcon, Receipt, Wallet } from 'lucide-react'
 import { Card } from '@/components/ui/card'
@@ -8,11 +8,34 @@ import { MoneyText } from '@/components/finance/MoneyText'
 import { PageHeader } from '@/components/finance/PageHeader'
 import { TransactionRow } from '@/features/transactions/TransactionRow'
 import { AddTransactionMenu } from '@/components/finance/AddTransactionMenu'
+import { DateRangeSelector } from '@/features/dashboard/DateRangeSelector'
+import { IncomeExpenseChart } from '@/features/dashboard/IncomeExpenseChart'
+import { ExpenseBreakdownChart } from '@/features/dashboard/ExpenseBreakdownChart'
+import { SpendingTrendChart } from '@/features/dashboard/SpendingTrendChart'
+import { NetWorthTrendChart } from '@/features/dashboard/NetWorthTrendChart'
+import { AccountBalanceChart } from '@/features/dashboard/AccountBalanceChart'
 import { useFinanceStore } from '@/store/financeStore'
-import { computeAccountTotals, computeMonthlyStatement } from '@/lib/finance/calculations'
-import { getMonthBounds } from '@/lib/date'
+import { computeAccountTotals, computeCategoryBreakdown, computeMonthlyStatement } from '@/lib/finance/calculations'
+import {
+  computeAccountBalanceTrend,
+  computeIncomeVsExpenseSeries,
+  computeNetWorthTrend,
+  computeSpendingTrend,
+  rangeFromPreset,
+  type DateRangePreset,
+} from '@/lib/finance/timeSeries'
+import { getMonthBounds, isDateInRange, todayISODate } from '@/lib/date'
 import { getIcon } from '@/lib/icons'
 import { formatCurrency } from '@/lib/money'
+
+const MONTHS_FOR_PRESET: Record<DateRangePreset, number> = {
+  '7d': 3,
+  '30d': 3,
+  '3m': 6,
+  '6m': 6,
+  '1y': 12,
+  custom: 12,
+}
 
 export function DashboardPage() {
   const navigate = useNavigate()
@@ -20,6 +43,7 @@ export function DashboardPage() {
   const transactions = useFinanceStore((s) => s.transactions)
   const transfers = useFinanceStore((s) => s.transfers)
   const categories = useFinanceStore((s) => s.categories)
+  const [preset, setPreset] = useState<DateRangePreset>('30d')
 
   const totals = computeAccountTotals(accounts)
   const bounds = useMemo(() => {
@@ -29,6 +53,22 @@ export function DashboardPage() {
   const statement = computeMonthlyStatement(accounts, transactions, transfers, bounds)
   const categoryById = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories])
   const accountById = useMemo(() => new Map(accounts.map((a) => [a.id, a])), [accounts])
+
+  const today = todayISODate()
+  const range = useMemo(() => rangeFromPreset(preset, new Date()), [preset])
+  const months = MONTHS_FOR_PRESET[preset]
+
+  const incomeExpenseSeries = useMemo(() => computeIncomeVsExpenseSeries(transactions, today, months), [transactions, today, months])
+  const spendingTrend = useMemo(() => computeSpendingTrend(transactions, range), [transactions, range])
+  const netWorthTrend = useMemo(() => computeNetWorthTrend(accounts, transactions, today, months), [accounts, transactions, today, months])
+  const accountBalanceTrend = useMemo(
+    () => computeAccountBalanceTrend(accounts, transactions, today, months),
+    [accounts, transactions, today, months],
+  )
+  const expenseBreakdown = useMemo(() => {
+    const inRange = transactions.filter((t) => isDateInRange(t.date, range.startISO, range.endISO))
+    return computeCategoryBreakdown(inRange, categories, 'expense')
+  }, [transactions, categories, range])
 
   const recentTransactions = useMemo(
     () =>
@@ -88,6 +128,34 @@ export function DashboardPage() {
         <Card className="p-4">
           <p className="text-xs font-medium text-muted-foreground">Remaining This Month</p>
           <MoneyText cents={statement.netCashFlowCents} kind={statement.netCashFlowCents >= 0 ? 'income' : 'expense'} signed className="mt-1 block text-xl font-semibold" />
+        </Card>
+      </div>
+
+      <div className="mb-6 flex items-center justify-between">
+        <h3 className="text-sm font-medium text-muted-foreground">Charts</h3>
+        <DateRangeSelector value={preset} onChange={setPreset} />
+      </div>
+
+      <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Card className="p-4">
+          <p className="mb-2 text-sm font-medium">Income vs Expenses</p>
+          <IncomeExpenseChart data={incomeExpenseSeries} />
+        </Card>
+        <Card className="p-4">
+          <p className="mb-2 text-sm font-medium">Expense Breakdown</p>
+          <ExpenseBreakdownChart data={expenseBreakdown} />
+        </Card>
+        <Card className="p-4">
+          <p className="mb-2 text-sm font-medium">Spending Trend</p>
+          <SpendingTrendChart data={spendingTrend} />
+        </Card>
+        <Card className="p-4">
+          <p className="mb-2 text-sm font-medium">Net Worth Trend</p>
+          <NetWorthTrendChart data={netWorthTrend} />
+        </Card>
+        <Card className="p-4 lg:col-span-2">
+          <p className="mb-2 text-sm font-medium">Account Balances</p>
+          <AccountBalanceChart data={accountBalanceTrend} accounts={accounts} />
         </Card>
       </div>
 

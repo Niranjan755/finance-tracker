@@ -22,7 +22,7 @@ const EXPENSE_GROUPS: {
     id: 'housing',
     name: 'Housing',
     icon: 'home',
-    color: '#f59e0b',
+    color: '#2a78d6',
     children: [
       { id: 'rent', name: 'Rent' },
       { id: 'mortgage', name: 'Mortgage' },
@@ -34,7 +34,7 @@ const EXPENSE_GROUPS: {
     id: 'food',
     name: 'Food',
     icon: 'utensils',
-    color: '#ef4444',
+    color: '#eb6834',
     children: [
       { id: 'groceries', name: 'Groceries' },
       { id: 'restaurants', name: 'Restaurants' },
@@ -46,7 +46,7 @@ const EXPENSE_GROUPS: {
     id: 'transportation',
     name: 'Transportation',
     icon: 'car',
-    color: '#3b82f6',
+    color: '#1baf7a',
     children: [
       { id: 'gas', name: 'Gas' },
       { id: 'uber', name: 'Uber' },
@@ -60,7 +60,7 @@ const EXPENSE_GROUPS: {
     id: 'bills',
     name: 'Bills & Utilities',
     icon: 'receipt',
-    color: '#8b5cf6',
+    color: '#eda100',
     children: [
       { id: 'electricity', name: 'Electricity' },
       { id: 'water', name: 'Water' },
@@ -73,7 +73,7 @@ const EXPENSE_GROUPS: {
     id: 'shopping',
     name: 'Shopping',
     icon: 'shopping-bag',
-    color: '#ec4899',
+    color: '#e87ba4',
     children: [
       { id: 'clothing', name: 'Clothing' },
       { id: 'electronics', name: 'Electronics' },
@@ -85,7 +85,7 @@ const EXPENSE_GROUPS: {
     id: 'entertainment',
     name: 'Entertainment',
     icon: 'clapperboard',
-    color: '#14b8a6',
+    color: '#008300',
     children: [
       { id: 'movies', name: 'Movies' },
       { id: 'games', name: 'Games' },
@@ -97,7 +97,7 @@ const EXPENSE_GROUPS: {
     id: 'health',
     name: 'Health',
     icon: 'heart-pulse',
-    color: '#22c55e',
+    color: '#4a3aa7',
     children: [
       { id: 'doctor', name: 'Doctor' },
       { id: 'pharmacy', name: 'Pharmacy' },
@@ -109,7 +109,7 @@ const EXPENSE_GROUPS: {
     id: 'travel',
     name: 'Travel',
     icon: 'plane',
-    color: '#06b6d4',
+    color: '#e34948',
     children: [
       { id: 'flights', name: 'Flights' },
       { id: 'hotels', name: 'Hotels' },
