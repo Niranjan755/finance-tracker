@@ -1,32 +1,20 @@
-# React + TypeScript + Vite
+# Finance Tracker
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A personal finance tracker built with React, TypeScript, Vite, and IndexedDB.
 
-Currently, two official plugins are available:
+## Cloud sync setup (optional)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+The app works fully offline out of the box. To sync your data across devices:
 
-## React Compiler
+1. Create a project at https://supabase.com
+2. Open the SQL Editor and run the contents of `supabase/schema.sql`
+3. Copy `.env.example` to `.env` and fill in your project's URL and anon key:
+   ```bash
+   cp .env.example .env
+   ```
+4. Run `npm install && npm run dev`
+5. In the app, go to Settings → Account & Cloud Sync and sign in with a magic link
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
-
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Once signed in, changes sync automatically across every device you're signed into on the same
+account. If you edit on two devices while both are offline at once, the device that syncs last
+wins — there's no merge across offline edits.

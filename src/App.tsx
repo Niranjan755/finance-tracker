@@ -6,6 +6,8 @@ import { AppShell } from '@/components/layout/AppShell'
 import { OnboardingFlow } from '@/features/onboarding/OnboardingFlow'
 import { useThemeSync } from '@/hooks/useThemeSync'
 import { useFinanceStore } from '@/store/financeStore'
+import { useAuthStore } from '@/store/authStore'
+import { initSyncEngine } from '@/lib/sync/engine'
 
 const DashboardPage = lazy(() =>
   import('@/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })),
@@ -72,6 +74,8 @@ function AppContent() {
 
   useEffect(() => {
     init()
+    useAuthStore.getState()._init()
+    initSyncEngine()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

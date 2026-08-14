@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { Download, FileDown, Info, Sparkles, Trash2, Upload } from 'lucide-react'
+import { formatDistanceToNow } from 'date-fns'
+import { Cloud, Download, FileDown, Info, LogOut, Mail, Sparkles, Trash2, Upload } from 'lucide-react'
 import { PageHeader } from '@/components/finance/PageHeader'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -27,6 +28,8 @@ import {
 import { CategoryManager } from '@/features/settings/CategoryManager'
 import { CSVImportDialog } from '@/features/import/CSVImportDialog'
 import { useFinanceStore } from '@/store/financeStore'
+import { useAuthStore } from '@/store/authStore'
+import { isSupabaseConfigured } from '@/lib/supabase/client'
 import { CURRENCIES } from '@/lib/money'
 import { exportTransactionsToCSV } from '@/lib/export/csv'
 import { buildBackup, downloadBackupJSON, parseBackupJSON } from '@/lib/export/json'
@@ -50,6 +53,33 @@ export function SettingsPage() {
   const [demoConfirmOpen, setDemoConfirmOpen] = useState(false)
   const [restoreFile, setRestoreFile] = useState<File | null>(null)
   const jsonInputRef = useRef<HTMLInputElement>(null)
+
+  const authStatus = useAuthStore((s) => s.status)
+  const userEmail = useAuthStore((s) => s.userEmail)
+  const syncStatus = useAuthStore((s) => s.syncStatus)
+  const lastSyncedAt = useAuthStore((s) => s.lastSyncedAt)
+  const syncError = useAuthStore((s) => s.syncError)
+  const signInWithEmail = useAuthStore((s) => s.signInWithEmail)
+  const signOut = useAuthStore((s) => s.signOut)
+  const [signInEmail, setSignInEmail] = useState('')
+  const [sendingLink, setSendingLink] = useState(false)
+  const [linkSent, setLinkSent] = useState(false)
+
+  async function handleSendMagicLink() {
+    if (!signInEmail.trim()) return
+    setSendingLink(true)
+    try {
+      await signInWithEmail(signInEmail.trim())
+      setLinkSent(true)
+      toast.success('Check your email for a sign-in link')
+    } catch (error) {
+      toast.error('Unable to send sign-in link', {
+        description: error instanceof Error ? error.message : 'Unknown error',
+      })
+    } finally {
+      setSendingLink(false)
+    }
+  }
 
   function handleExportJSON() {
     const backup = buildBackup({
@@ -206,6 +236,72 @@ export function SettingsPage() {
 
         <Section title="Categories">
           <CategoryManager />
+        </Section>
+
+        <Section title="Account & Cloud Sync">
+          {!isSupabaseConfigured() ? (
+            <div className="space-y-2">
+              <p className="text-muted-foreground text-sm">
+                Cloud sync is not configured for this app yet.
+              </p>
+              <p className="text-muted-foreground text-xs">
+                Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your environment to enable it.
+              </p>
+            </div>
+          ) : authStatus === 'signed-in' ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <p className="text-sm font-medium">{userEmail}</p>
+                  <p className="text-muted-foreground text-xs">
+                    {syncStatus === 'syncing' && 'Syncing…'}
+                    {syncStatus === 'synced' &&
+                      lastSyncedAt &&
+                      `Synced ${formatDistanceToNow(new Date(lastSyncedAt), { addSuffix: true })}`}
+                    {syncStatus === 'error' && `Sync error: ${syncError}`}
+                    {syncStatus === 'idle' && 'Waiting for changes to sync'}
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" onClick={signOut} className="gap-1.5">
+                  <LogOut className="size-4" aria-hidden="true" />
+                  Sign out
+                </Button>
+              </div>
+              <p className="bg-muted/40 text-muted-foreground flex items-start gap-2 rounded-lg border px-3 py-2 text-xs">
+                <Cloud className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+                Changes sync automatically across your signed-in devices. If you edit on two
+                devices while offline at the same time, the most recently synced device wins.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-muted-foreground text-sm">
+                Sign in to automatically sync your data across all your devices.
+              </p>
+              <div className="flex max-w-sm flex-wrap gap-2">
+                <Input
+                  type="email"
+                  value={signInEmail}
+                  onChange={(e) => setSignInEmail(e.target.value)}
+                  placeholder="you@example.com"
+                />
+                <Button
+                  variant="outline"
+                  onClick={handleSendMagicLink}
+                  disabled={sendingLink || !signInEmail.trim()}
+                  className="gap-1.5"
+                >
+                  <Mail className="size-4" aria-hidden="true" />
+                  Send magic link
+                </Button>
+              </div>
+              {linkSent && (
+                <p className="text-muted-foreground text-xs">
+                  Check your email and click the link to finish signing in on this device.
+                </p>
+              )}
+            </div>
+          )}
         </Section>
 
         <Section title="Data">
