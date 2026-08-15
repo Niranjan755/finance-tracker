@@ -25,7 +25,7 @@ import {
   deleteTransaction,
   updateTransaction,
 } from '@/lib/finance/transactionOps'
-import { createTransfer, deleteTransfer } from '@/lib/finance/transferOps'
+import { createTransfer, deleteTransfer, updateTransfer } from '@/lib/finance/transferOps'
 import { attachReceipt, removeReceipt } from '@/lib/finance/receiptOps'
 import type {
   Account,
@@ -89,6 +89,7 @@ interface FinanceState {
   removeReceiptFromTransaction: (transactionId: string) => Promise<void>
 
   addTransfer: (input: TransferFormInput) => Promise<Transfer>
+  editTransfer: (id: string, input: TransferFormInput) => Promise<void>
   removeTransfer: (id: string) => Promise<void>
 
   addCategory: (input: Omit<Category, 'id' | 'isDefault'>) => Promise<Category>
@@ -314,6 +315,28 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
       accounts: mergeAccount(mergeAccount(s.accounts, fromAccount), toAccount),
     }))
     return transfer
+  },
+
+  async editTransfer(id, input) {
+    const existing = get().transfers.find((t) => t.id === id)
+    const updated = await updateTransfer(id, input)
+    const touchedAccountIds = new Set(
+      [
+        input.fromAccountId,
+        input.toAccountId,
+        existing?.fromAccountId,
+        existing?.toAccountId,
+      ].filter(Boolean) as string[],
+    )
+    const touchedAccounts = await Promise.all([...touchedAccountIds].map(refetchAccount))
+    set((s) => {
+      let accounts = s.accounts
+      for (const acc of touchedAccounts) accounts = mergeAccount(accounts, acc)
+      return {
+        transfers: s.transfers.map((t) => (t.id === id ? updated : t)),
+        accounts,
+      }
+    })
   },
 
   async removeTransfer(id) {

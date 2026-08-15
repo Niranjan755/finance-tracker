@@ -57,6 +57,7 @@ export function BudgetsPage() {
   const budgets = useFinanceStore((s) => s.budgets)
   const transactions = useFinanceStore((s) => s.transactions)
   const categories = useFinanceStore((s) => s.categories)
+  const accounts = useFinanceStore((s) => s.accounts)
   const addBudget = useFinanceStore((s) => s.addBudget)
   const updateBudget = useFinanceStore((s) => s.updateBudget)
   const removeBudget = useFinanceStore((s) => s.removeBudget)
@@ -75,8 +76,8 @@ export function BudgetsPage() {
     [budgets, year, month],
   )
   const progress = useMemo(
-    () => computeBudgetProgress(monthBudgets, transactions, categories),
-    [monthBudgets, transactions, categories],
+    () => computeBudgetProgress(monthBudgets, transactions, categories, accounts, currency),
+    [monthBudgets, transactions, categories, accounts, currency],
   )
 
   const totalBudgetCents = monthBudgets.reduce((s, b) => s + b.amountCents, 0)

@@ -39,6 +39,7 @@ const HORIZON_DAYS = 60
 export function UpcomingPage() {
   const accounts = useFinanceStore((s) => s.accounts)
   const categories = useFinanceStore((s) => s.categories)
+  const currency = useFinanceStore((s) => s.settings.currency)
   const recurring = useFinanceStore((s) => s.recurring)
   const addRecurring = useFinanceStore((s) => s.addRecurring)
   const editRecurring = useFinanceStore((s) => s.editRecurring)
@@ -74,7 +75,7 @@ export function UpcomingPage() {
   const expectedIncomeCents = occurrences
     .filter((o) => o.type === 'income')
     .reduce((s, o) => s + o.amountCents, 0)
-  const totals = computeAccountTotals(accounts)
+  const totals = computeAccountTotals(accounts, currency)
   const expectedRemainingCents =
     totals.availableCashCents + expectedIncomeCents - expectedExpenseCents
 

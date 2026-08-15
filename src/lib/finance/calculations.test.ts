@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { getMonthBounds } from '@/lib/date'
-import { toCents } from '@/lib/money'
+import { convertCentsToCurrency, toCents } from '@/lib/money'
 import type { Account, Budget, Category, Transaction, Transfer } from '@/types'
 import {
   budgetStatusFor,
@@ -58,16 +58,19 @@ function txn(overrides: Partial<Transaction> = {}): Transaction {
 
 describe('computeAccountTotals', () => {
   it('matches the spec example: checking 4250, credit card -820/5000, cash 350', () => {
-    const totals = computeAccountTotals([
-      account({ id: 'checking', type: 'checking', balanceCents: toCents('4250') }),
-      account({
-        id: 'visa',
-        type: 'credit_card',
-        balanceCents: toCents('820'),
-        creditLimitCents: toCents('5000'),
-      }),
-      account({ id: 'cash', type: 'cash', balanceCents: toCents('350') }),
-    ])
+    const totals = computeAccountTotals(
+      [
+        account({ id: 'checking', type: 'checking', balanceCents: toCents('4250') }),
+        account({
+          id: 'visa',
+          type: 'credit_card',
+          balanceCents: toCents('820'),
+          creditLimitCents: toCents('5000'),
+        }),
+        account({ id: 'cash', type: 'cash', balanceCents: toCents('350') }),
+      ],
+      'USD',
+    )
 
     expect(totals.totalAssetsCents).toBe(toCents('4600'))
     expect(totals.totalLiabilitiesCents).toBe(toCents('820'))
@@ -77,23 +80,39 @@ describe('computeAccountTotals', () => {
   })
 
   it('excludes inactive accounts', () => {
-    const totals = computeAccountTotals([
-      account({ id: 'a', balanceCents: toCents('100'), isActive: true }),
-      account({ id: 'b', balanceCents: toCents('900'), isActive: false }),
-    ])
+    const totals = computeAccountTotals(
+      [
+        account({ id: 'a', balanceCents: toCents('100'), isActive: true }),
+        account({ id: 'b', balanceCents: toCents('900'), isActive: false }),
+      ],
+      'USD',
+    )
     expect(totals.totalAssetsCents).toBe(toCents('100'))
   })
 
-  it('keeps each currency in its own bucket instead of mixing different currencies together', () => {
-    const totals = computeAccountTotals([
-      account({ id: 'usd', type: 'checking', currency: 'USD', balanceCents: toCents('107') }),
-      account({ id: 'inr', type: 'checking', currency: 'INR', balanceCents: toCents('10000') }),
-    ])
+  it('keeps each currency native in byCurrency, but converts the flat totals into the target currency', () => {
+    const totals = computeAccountTotals(
+      [
+        account({ id: 'usd', type: 'checking', currency: 'USD', balanceCents: toCents('107') }),
+        account({ id: 'inr', type: 'checking', currency: 'INR', balanceCents: toCents('10000') }),
+      ],
+      'USD',
+    )
 
-    expect(totals.totalAssetsCents).toBe(toCents('107') + toCents('10000'))
-    expect(totals.netWorthCents).toBe(toCents('107') + toCents('10000'))
+    const inrInUsd = convertCentsToCurrency(toCents('10000'), 'INR', 'USD')
+    expect(totals.totalAssetsCents).toBe(toCents('107') + inrInUsd)
+    expect(totals.netWorthCents).toBe(toCents('107') + inrInUsd)
+    // byCurrency stays native/unconverted - this is the correct per-currency breakdown.
     expect(totals.byCurrency.USD.netWorthCents).toBe(toCents('107'))
     expect(totals.byCurrency.INR.netWorthCents).toBe(toCents('10000'))
+  })
+
+  it('converts a non-USD account into a non-USD target currency', () => {
+    const totals = computeAccountTotals(
+      [account({ id: 'usd', type: 'checking', currency: 'USD', balanceCents: toCents('100') })],
+      'INR',
+    )
+    expect(totals.totalAssetsCents).toBe(convertCentsToCurrency(toCents('100'), 'USD', 'INR'))
   })
 })
 
@@ -107,7 +126,7 @@ describe('computeMonthlyStatement', () => {
     const transfers: Transfer[] = []
 
     const bounds = getMonthBounds(2026, 8)
-    const statement = computeMonthlyStatement(accounts, transactions, transfers, bounds)
+    const statement = computeMonthlyStatement(accounts, transactions, transfers, bounds, 'USD')
 
     expect(statement.totalIncomeCents).toBe(toCents('9050'))
     expect(statement.totalExpenseCents).toBe(toCents('4180'))
@@ -124,7 +143,7 @@ describe('computeMonthlyStatement', () => {
       txn({ type: 'income', amountCents: toCents('200'), date: '2026-08-15' }),
     ]
     const bounds = getMonthBounds(2026, 8)
-    const statement = computeMonthlyStatement(accounts, transactions, [], bounds)
+    const statement = computeMonthlyStatement(accounts, transactions, [], bounds, 'USD')
     expect(statement.totalIncomeCents).toBe(toCents('200'))
     expect(statement.totalExpenseCents).toBe(0)
   })
@@ -147,7 +166,7 @@ describe('computeMonthlyStatement', () => {
       },
     ]
     const bounds = getMonthBounds(2026, 8)
-    const statement = computeMonthlyStatement([checking, savings], [], transfers, bounds)
+    const statement = computeMonthlyStatement([checking, savings], [], transfers, bounds, 'USD')
     // No income/expense at all: opening must equal closing despite the transfer.
     expect(statement.openingBalanceCents).toBe(statement.closingBalanceCents)
     expect(statement.closingBalanceCents).toBe(toCents('1500'))
@@ -189,7 +208,7 @@ describe('computeCategoryBreakdown', () => {
       txn({ type: 'expense', categoryId: 'rent', amountCents: toCents('300') }),
       txn({ type: 'expense', categoryId: 'food', amountCents: toCents('100') }),
     ]
-    const breakdown = computeCategoryBreakdown(transactions, categories)
+    const breakdown = computeCategoryBreakdown(transactions, categories, [], 'USD')
     expect(breakdown).toEqual([
       {
         categoryId: 'housing',
@@ -208,6 +227,25 @@ describe('computeCategoryBreakdown', () => {
         percent: 25,
       },
     ])
+  })
+
+  it('converts a mixed-currency transaction into the target currency instead of raw-summing it', () => {
+    const categories: Category[] = [
+      { id: 'food', name: 'Food', type: 'expense', parentId: null, icon: '', color: '', isDefault: true },
+    ]
+    const accounts = [
+      account({ id: 'usd-acct', currency: 'USD' }),
+      account({ id: 'inr-acct', currency: 'INR' }),
+    ]
+    const transactions: Transaction[] = [
+      txn({ accountId: 'usd-acct', type: 'expense', categoryId: 'food', amountCents: toCents('50') }),
+      txn({ accountId: 'inr-acct', type: 'expense', categoryId: 'food', amountCents: toCents('5000') }),
+    ]
+    const breakdown = computeCategoryBreakdown(transactions, categories, accounts, 'USD')
+    const expected = toCents('50') + convertCentsToCurrency(toCents('5000'), 'INR', 'USD')
+    expect(breakdown[0]?.amountCents).toBe(expected)
+    // The old bug summed raw cents (505000); the fix must not match that.
+    expect(breakdown[0]?.amountCents).not.toBe(toCents('50') + toCents('5000'))
   })
 })
 
@@ -240,7 +278,7 @@ describe('computeBudgetProgress', () => {
     const transactions: Transaction[] = [
       txn({ categoryId: 'food', amountCents: toCents('425'), date: '2026-08-10' }),
     ]
-    const [progress] = computeBudgetProgress(budgets, transactions, categories)
+    const [progress] = computeBudgetProgress(budgets, transactions, categories, [], 'USD')
     expect(progress?.spentCents).toBe(toCents('425'))
     expect(progress?.remainingCents).toBe(toCents('175'))
     expect(progress?.status).toBe('normal')
@@ -273,7 +311,7 @@ describe('computeBudgetProgress', () => {
     const transactions: Transaction[] = [
       txn({ categoryId: 'restaurants', amountCents: toCents('100'), date: '2026-08-10' }),
     ]
-    const [progress] = computeBudgetProgress(budgets, transactions, categories)
+    const [progress] = computeBudgetProgress(budgets, transactions, categories, [], 'USD')
     expect(progress?.spentCents).toBe(toCents('100'))
   })
 })
@@ -289,7 +327,7 @@ describe('computeSpendingByAccount', () => {
       txn({ accountId: 'visa', amountCents: toCents('100') }),
       txn({ accountId: 'checking', type: 'income', amountCents: toCents('9999') }),
     ]
-    const result = computeSpendingByAccount(transactions, accounts)
+    const result = computeSpendingByAccount(transactions, accounts, 'USD')
     expect(result).toEqual([
       {
         accountId: 'checking',
@@ -316,10 +354,10 @@ describe('computeAverageMonthlySpending', () => {
       txn({ type: 'expense', amountCents: toCents('300'), date: '2026-07-01' }),
       txn({ type: 'income', amountCents: toCents('99999'), date: '2026-07-05' }),
     ]
-    expect(computeAverageMonthlySpending(transactions)).toBe(toCents('200'))
+    expect(computeAverageMonthlySpending(transactions, [], 'USD')).toBe(toCents('200'))
   })
 
   it('returns 0 when there is no expense data', () => {
-    expect(computeAverageMonthlySpending([])).toBe(0)
+    expect(computeAverageMonthlySpending([], [], 'USD')).toBe(0)
   })
 })

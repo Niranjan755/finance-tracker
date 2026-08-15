@@ -48,15 +48,16 @@ export function DashboardPage() {
   const transactions = useFinanceStore((s) => s.transactions)
   const transfers = useFinanceStore((s) => s.transfers)
   const categories = useFinanceStore((s) => s.categories)
+  const currency = useFinanceStore((s) => s.settings.currency)
   const [preset, setPreset] = useState<DateRangePreset>('30d')
 
-  const totals = computeAccountTotals(accounts)
+  const totals = computeAccountTotals(accounts, currency)
   const totalsByCurrency = Object.values(totals.byCurrency).filter((group) => group.totalAssetsCents > 0 || group.totalLiabilitiesCents > 0)
   const bounds = useMemo(() => {
     const now = new Date()
     return getMonthBounds(now.getFullYear(), now.getMonth() + 1)
   }, [])
-  const statement = computeMonthlyStatement(accounts, transactions, transfers, bounds)
+  const statement = computeMonthlyStatement(accounts, transactions, transfers, bounds, currency)
   const categoryById = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories])
   const accountById = useMemo(() => new Map(accounts.map((a) => [a.id, a])), [accounts])
 
@@ -65,16 +66,16 @@ export function DashboardPage() {
   const months = MONTHS_FOR_PRESET[preset]
 
   const incomeExpenseSeries = useMemo(
-    () => computeIncomeVsExpenseSeries(transactions, today, months),
-    [transactions, today, months],
+    () => computeIncomeVsExpenseSeries(transactions, accounts, currency, today, months),
+    [transactions, accounts, currency, today, months],
   )
   const spendingTrend = useMemo(
-    () => computeSpendingTrend(transactions, range),
-    [transactions, range],
+    () => computeSpendingTrend(transactions, accounts, currency, range),
+    [transactions, accounts, currency, range],
   )
   const netWorthTrend = useMemo(
-    () => computeNetWorthTrend(accounts, transactions, today, months),
-    [accounts, transactions, today, months],
+    () => computeNetWorthTrend(accounts, transactions, currency, today, months),
+    [accounts, transactions, currency, today, months],
   )
   const accountBalanceTrend = useMemo(
     () => computeAccountBalanceTrend(accounts, transactions, today, months),
@@ -82,8 +83,8 @@ export function DashboardPage() {
   )
   const expenseBreakdown = useMemo(() => {
     const inRange = transactions.filter((t) => isDateInRange(t.date, range.startISO, range.endISO))
-    return computeCategoryBreakdown(inRange, categories, 'expense')
-  }, [transactions, categories, range])
+    return computeCategoryBreakdown(inRange, categories, accounts, currency, 'expense')
+  }, [transactions, categories, accounts, currency, range])
 
   const recentTransactions = useMemo(
     () =>

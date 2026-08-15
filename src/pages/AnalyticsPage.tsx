@@ -34,29 +34,32 @@ export function AnalyticsPage() {
     [accounts, transactions, categories, currency, today],
   )
   const expenseByCategory = useMemo(
-    () => computeCategoryBreakdown(transactions, categories, 'expense'),
-    [transactions, categories],
+    () => computeCategoryBreakdown(transactions, categories, accounts, currency, 'expense'),
+    [transactions, categories, accounts, currency],
   )
   const incomeBySource = useMemo(
-    () => computeCategoryBreakdown(transactions, categories, 'income'),
-    [transactions, categories],
+    () => computeCategoryBreakdown(transactions, categories, accounts, currency, 'income'),
+    [transactions, categories, accounts, currency],
   )
   const byAccount = useMemo(
-    () => computeSpendingByAccount(transactions, accounts),
-    [transactions, accounts],
+    () => computeSpendingByAccount(transactions, accounts, currency),
+    [transactions, accounts, currency],
   )
-  const merchants = useMemo(() => computeMerchantStats(transactions).slice(0, 8), [transactions])
+  const merchants = useMemo(
+    () => computeMerchantStats(transactions, accounts, currency).slice(0, 8),
+    [transactions, accounts, currency],
+  )
   const avgMonthlySpending = useMemo(
-    () => computeAverageMonthlySpending(transactions),
-    [transactions],
+    () => computeAverageMonthlySpending(transactions, accounts, currency),
+    [transactions, accounts, currency],
   )
   const incomeExpenseSeries = useMemo(
-    () => computeIncomeVsExpenseSeries(transactions, today, 6),
-    [transactions, today],
+    () => computeIncomeVsExpenseSeries(transactions, accounts, currency, today, 6),
+    [transactions, accounts, currency, today],
   )
   const netWorthTrend = useMemo(
-    () => computeNetWorthTrend(accounts, transactions, today, 6),
-    [accounts, transactions, today],
+    () => computeNetWorthTrend(accounts, transactions, currency, today, 6),
+    [accounts, transactions, currency, today],
   )
 
   const totalDays = new Set(transactions.filter((t) => t.type === 'expense').map((t) => t.date))

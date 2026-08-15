@@ -27,6 +27,7 @@ export function TransactionDialog() {
   const addIncome = useFinanceStore((s) => s.addIncome)
   const editTransaction = useFinanceStore((s) => s.editTransaction)
   const addTransfer = useFinanceStore((s) => s.addTransfer)
+  const editTransfer = useFinanceStore((s) => s.editTransfer)
 
   const [tab, setTab] = useState<'expense' | 'income' | 'transfer'>(
     defaultType === 'transfer' ? 'transfer' : defaultType,
@@ -78,11 +79,16 @@ export function TransactionDialog() {
 
   async function handleTransferSubmit(values: TransferFormInput) {
     try {
-      await addTransfer(values)
-      toast.success('Transfer completed')
+      if (editingTransfer) {
+        await editTransfer(editingTransfer.id, values)
+        toast.success('Transfer updated')
+      } else {
+        await addTransfer(values)
+        toast.success('Transfer completed')
+      }
       handleOpenChange(false)
     } catch (err) {
-      toast.error('Unable to complete transfer', {
+      toast.error('Unable to save transfer', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     }

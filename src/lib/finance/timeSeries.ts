@@ -1,6 +1,7 @@
 import { addDays, addMonths, format, startOfDay, startOfMonth } from 'date-fns'
 import { parseISODate, toISODate } from '@/lib/date'
-import type { Account, Transaction } from '@/types'
+import { convertCentsToCurrency } from '@/lib/money'
+import type { Account, Currency, Transaction } from '@/types'
 import { netWorthAsOf } from './calculations'
 
 export type DateRangePreset = '7d' | '30d' | '3m' | '6m' | '1y' | 'custom'
@@ -38,9 +39,12 @@ export interface MonthlyIncomeExpensePoint {
 /** Income vs expense, bucketed by calendar month, for the last `months` months up to and including the month containing `endISO`. */
 export function computeIncomeVsExpenseSeries(
   transactions: Transaction[],
+  accounts: Account[],
+  targetCurrency: Currency,
   endISO: string,
   months: number,
 ): MonthlyIncomeExpensePoint[] {
+  const accountById = new Map(accounts.map((a) => [a.id, a]))
   const end = parseISODate(endISO)
   const buckets: MonthlyIncomeExpensePoint[] = []
   for (let i = months - 1; i >= 0; i--) {
@@ -57,8 +61,10 @@ export function computeIncomeVsExpenseSeries(
     const key = t.date.slice(0, 7)
     const bucket = byKey.get(key)
     if (!bucket) continue
-    if (t.type === 'income') bucket.incomeCents += t.amountCents
-    else bucket.expenseCents += t.amountCents
+    const nativeCurrency = accountById.get(t.accountId)?.currency ?? targetCurrency
+    const converted = convertCentsToCurrency(t.amountCents, nativeCurrency, targetCurrency)
+    if (t.type === 'income') bucket.incomeCents += converted
+    else bucket.expenseCents += converted
   }
   return buckets
 }
@@ -72,8 +78,11 @@ export interface SpendingTrendPoint {
 /** Daily spending total across the given date range (inclusive). */
 export function computeSpendingTrend(
   transactions: Transaction[],
+  accounts: Account[],
+  targetCurrency: Currency,
   range: DateRange,
 ): SpendingTrendPoint[] {
+  const accountById = new Map(accounts.map((a) => [a.id, a]))
   const start = parseISODate(range.startISO)
   const end = parseISODate(range.endISO)
   const dayCount = Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1
@@ -89,7 +98,9 @@ export function computeSpendingTrend(
   for (const t of transactions) {
     if (t.type !== 'expense') continue
     const point = byDate.get(t.date)
-    if (point) point.expenseCents += t.amountCents
+    if (!point) continue
+    const nativeCurrency = accountById.get(t.accountId)?.currency ?? targetCurrency
+    point.expenseCents += convertCentsToCurrency(t.amountCents, nativeCurrency, targetCurrency)
   }
   return points
 }
@@ -104,6 +115,7 @@ export interface NetWorthTrendPoint {
 export function computeNetWorthTrend(
   accounts: Account[],
   transactions: Transaction[],
+  targetCurrency: Currency,
   endISO: string,
   months: number,
 ): NetWorthTrendPoint[] {
@@ -116,7 +128,7 @@ export function computeNetWorthTrend(
     points.push({
       monthKey: format(monthDate, 'yyyy-MM'),
       label: format(monthDate, 'MMM yyyy'),
-      netWorthCents: netWorthAsOf(accounts, transactions, clampedISO),
+      netWorthCents: netWorthAsOf(accounts, transactions, clampedISO, targetCurrency),
     })
   }
   return points

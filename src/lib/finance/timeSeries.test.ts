@@ -70,7 +70,7 @@ describe('computeIncomeVsExpenseSeries', () => {
       txn({ type: 'income', amountCents: toCents('8200'), date: '2026-08-05' }),
       txn({ type: 'expense', amountCents: toCents('4100'), date: '2026-08-10' }),
     ]
-    const series = computeIncomeVsExpenseSeries(transactions, '2026-08-14', 3)
+    const series = computeIncomeVsExpenseSeries(transactions, [], 'USD', '2026-08-14', 3)
     expect(series.map((p) => p.label)).toEqual(['Jun', 'Jul', 'Aug'])
     expect(series[0]).toMatchObject({ incomeCents: toCents('7500'), expenseCents: toCents('4200') })
     expect(series[2]).toMatchObject({ incomeCents: toCents('8200'), expenseCents: toCents('4100') })
@@ -80,7 +80,7 @@ describe('computeIncomeVsExpenseSeries', () => {
     const transactions: Transaction[] = [
       txn({ type: 'expense', amountCents: 100, date: '2026-01-01' }),
     ]
-    const series = computeIncomeVsExpenseSeries(transactions, '2026-08-14', 3)
+    const series = computeIncomeVsExpenseSeries(transactions, [], 'USD', '2026-08-14', 3)
     expect(series.reduce((s, p) => s + p.expenseCents, 0)).toBe(0)
   })
 })
@@ -93,7 +93,7 @@ describe('computeSpendingTrend', () => {
       txn({ type: 'income', amountCents: toCents('1000'), date: '2026-08-01' }),
       txn({ type: 'expense', amountCents: toCents('10'), date: '2026-08-03' }),
     ]
-    const points = computeSpendingTrend(transactions, {
+    const points = computeSpendingTrend(transactions, [], 'USD', {
       startISO: '2026-08-01',
       endISO: '2026-08-03',
     })
@@ -111,7 +111,7 @@ describe('computeNetWorthTrend', () => {
       txn({ type: 'income', amountCents: toCents('9050'), date: '2026-08-05' }),
       txn({ type: 'expense', amountCents: toCents('4180'), date: '2026-08-10' }),
     ]
-    const trend = computeNetWorthTrend(accounts, transactions, '2026-08-14', 2)
+    const trend = computeNetWorthTrend(accounts, transactions, 'USD', '2026-08-14', 2)
     // August (current, partial) ends at the real net worth.
     expect(trend[1]?.netWorthCents).toBe(toCents('13320'))
     // July had none of August's income/expense, so it's 9050-4180=4870 less.

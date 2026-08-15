@@ -128,7 +128,12 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
               name="currency"
               control={control}
               render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange} items={CURRENCY_ITEMS}>
+                <Select
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  disabled={!!account}
+                  items={CURRENCY_ITEMS}
+                >
                   <SelectTrigger id="acct-currency" className="w-full">
                     <SelectValue />
                   </SelectTrigger>
@@ -142,6 +147,12 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
                 </Select>
               )}
             />
+            {account && (
+              <p className="text-muted-foreground text-xs">
+                Currency can't be changed after an account is created — create a new account
+                instead.
+              </p>
+            )}
           </Field>
         </div>
 

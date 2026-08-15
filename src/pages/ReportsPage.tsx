@@ -70,20 +70,23 @@ export function ReportsPage() {
 
   const bounds = selected ? getMonthBounds(selected.year, selected.month) : null
   const statement = useMemo(
-    () => (bounds ? computeMonthlyStatement(accounts, transactions, transfers, bounds) : null),
-    [accounts, transactions, transfers, bounds],
+    () =>
+      bounds ? computeMonthlyStatement(accounts, transactions, transfers, bounds, currency) : null,
+    [accounts, transactions, transfers, bounds, currency],
   )
   const incomeBreakdown = useMemo(
     () =>
-      statement ? computeCategoryBreakdown(statement.incomeTransactions, categories, 'income') : [],
-    [statement, categories],
+      statement
+        ? computeCategoryBreakdown(statement.incomeTransactions, categories, accounts, currency, 'income')
+        : [],
+    [statement, categories, accounts, currency],
   )
   const expenseBreakdown = useMemo(
     () =>
       statement
-        ? computeCategoryBreakdown(statement.expenseTransactions, categories, 'expense')
+        ? computeCategoryBreakdown(statement.expenseTransactions, categories, accounts, currency, 'expense')
         : [],
-    [statement, categories],
+    [statement, categories, accounts, currency],
   )
   const categoryById = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories])
   const accountById = useMemo(() => new Map(accounts.map((a) => [a.id, a])), [accounts])

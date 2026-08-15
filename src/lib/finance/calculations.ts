@@ -1,7 +1,18 @@
 import { isDateInRange, type MonthBounds } from '@/lib/date'
-import { percentOf } from '@/lib/money'
+import { convertCentsToCurrency, percentOf } from '@/lib/money'
 import type { Account, Budget, Category, Currency, Transaction, Transfer } from '@/types'
 import { isLiabilityAccountType } from './math'
+
+/** Converts an amount from the currency of the account that owns it (looked up by id) into `targetCurrency`. */
+function convertedAmount(
+  amountCents: number,
+  accountId: string,
+  accountById: Map<string, Account>,
+  targetCurrency: Currency,
+): number {
+  const nativeCurrency = accountById.get(accountId)?.currency ?? targetCurrency
+  return convertCentsToCurrency(amountCents, nativeCurrency, targetCurrency)
+}
 
 export interface CurrencyTotals {
   currency: Currency
@@ -23,7 +34,7 @@ export interface AccountTotals {
 
 const LIQUID_ASSET_TYPES: Account['type'][] = ['checking', 'savings', 'cash', 'debit_card']
 
-export function computeAccountTotals(accounts: Account[]): AccountTotals {
+export function computeAccountTotals(accounts: Account[], targetCurrency: Currency): AccountTotals {
   const byCurrency = {
     USD: { currency: 'USD', totalAssetsCents: 0, totalLiabilitiesCents: 0, netWorthCents: 0, availableCashCents: 0, creditCardDebtCents: 0 },
     INR: { currency: 'INR', totalAssetsCents: 0, totalLiabilitiesCents: 0, netWorthCents: 0, availableCashCents: 0, creditCardDebtCents: 0 },
@@ -41,20 +52,25 @@ export function computeAccountTotals(accounts: Account[]): AccountTotals {
   for (const account of accounts) {
     if (!account.isActive) continue
     const bucket = byCurrency[account.currency]
+    const convertedBalance = convertCentsToCurrency(
+      account.balanceCents,
+      account.currency,
+      targetCurrency,
+    )
 
     if (isLiabilityAccountType(account.type)) {
       bucket.totalLiabilitiesCents += account.balanceCents
-      totalLiabilities += account.balanceCents
+      totalLiabilities += convertedBalance
       if (account.type === 'credit_card') {
         bucket.creditCardDebtCents += account.balanceCents
-        creditCardDebt += account.balanceCents
+        creditCardDebt += convertedBalance
       }
     } else {
       bucket.totalAssetsCents += account.balanceCents
-      totalAssets += account.balanceCents
+      totalAssets += convertedBalance
       if (LIQUID_ASSET_TYPES.includes(account.type)) {
         bucket.availableCashCents += account.balanceCents
-        availableCash += account.balanceCents
+        availableCash += convertedBalance
       }
     }
 
@@ -83,12 +99,15 @@ export function netWorthAsOf(
   accounts: Account[],
   transactions: Transaction[],
   asOfISO: string,
+  targetCurrency: Currency,
 ): number {
-  const current = computeAccountTotals(accounts).netWorthCents
+  const accountById = new Map(accounts.map((a) => [a.id, a]))
+  const current = computeAccountTotals(accounts, targetCurrency).netWorthCents
   let adjustment = 0
   for (const t of transactions) {
     if (t.date > asOfISO) {
-      adjustment += t.type === 'income' ? -t.amountCents : t.amountCents
+      const converted = convertedAmount(t.amountCents, t.accountId, accountById, targetCurrency)
+      adjustment += t.type === 'income' ? -converted : converted
     }
   }
   return current + adjustment
@@ -114,26 +133,42 @@ export function computeMonthlyStatement(
   transactions: Transaction[],
   transfers: Transfer[],
   bounds: MonthBounds,
+  targetCurrency: Currency,
 ): MonthlyStatement {
+  const accountById = new Map(accounts.map((a) => [a.id, a]))
   const inMonth = transactions.filter((t) => isDateInRange(t.date, bounds.startISO, bounds.endISO))
   const incomeTransactions = inMonth.filter((t) => t.type === 'income')
   const expenseTransactions = inMonth.filter((t) => t.type === 'expense')
-  const totalIncomeCents = incomeTransactions.reduce((sum, t) => sum + t.amountCents, 0)
-  const totalExpenseCents = expenseTransactions.reduce((sum, t) => sum + t.amountCents, 0)
+  const totalIncomeCents = incomeTransactions.reduce(
+    (sum, t) => sum + convertedAmount(t.amountCents, t.accountId, accountById, targetCurrency),
+    0,
+  )
+  const totalExpenseCents = expenseTransactions.reduce(
+    (sum, t) => sum + convertedAmount(t.amountCents, t.accountId, accountById, targetCurrency),
+    0,
+  )
   const totalTransfersCents = transfers
     .filter((t) => isDateInRange(t.date, bounds.startISO, bounds.endISO))
-    .reduce((sum, t) => sum + t.fromAmountCents, 0)
+    .reduce(
+      (sum, t) => sum + convertedAmount(t.fromAmountCents, t.fromAccountId, accountById, targetCurrency),
+      0,
+    )
 
-  const closingBalanceCents = netWorthAsOf(accounts, transactions, bounds.endISO)
+  const closingBalanceCents = netWorthAsOf(accounts, transactions, bounds.endISO, targetCurrency)
   const openingBalanceCents = closingBalanceCents - totalIncomeCents + totalExpenseCents
   const netCashFlowCents = totalIncomeCents - totalExpenseCents
   const savingsRatePercent =
     totalIncomeCents === 0 ? 0 : percentOf(netCashFlowCents, totalIncomeCents)
 
-  const largestExpense = expenseTransactions.reduce<Transaction | null>(
-    (largest, t) => (!largest || t.amountCents > largest.amountCents ? t : largest),
-    null,
-  )
+  let largestExpense: Transaction | null = null
+  let largestExpenseConverted = 0
+  for (const t of expenseTransactions) {
+    const converted = convertedAmount(t.amountCents, t.accountId, accountById, targetCurrency)
+    if (!largestExpense || converted > largestExpenseConverted) {
+      largestExpense = t
+      largestExpenseConverted = converted
+    }
+  }
 
   return {
     bounds,
@@ -168,16 +203,20 @@ function topLevelCategoryId(category: Category): string {
 export function computeCategoryBreakdown(
   transactions: Transaction[],
   categories: Category[],
+  accounts: Account[],
+  targetCurrency: Currency,
   type: Transaction['type'] = 'expense',
 ): CategoryBreakdownEntry[] {
   const categoryById = new Map(categories.map((c) => [c.id, c]))
+  const accountById = new Map(accounts.map((a) => [a.id, a]))
   const totals = new Map<string, number>()
 
   for (const t of transactions) {
     if (t.type !== type) continue
     const category = categoryById.get(t.categoryId)
     const key = category ? topLevelCategoryId(category) : t.categoryId
-    totals.set(key, (totals.get(key) ?? 0) + t.amountCents)
+    const converted = convertedAmount(t.amountCents, t.accountId, accountById, targetCurrency)
+    totals.set(key, (totals.get(key) ?? 0) + converted)
   }
 
   const grandTotal = [...totals.values()].reduce((sum, v) => sum + v, 0)
@@ -227,8 +266,11 @@ export function computeBudgetProgress(
   budgets: Budget[],
   transactions: Transaction[],
   categories: Category[],
+  accounts: Account[],
+  targetCurrency: Currency,
 ): BudgetProgress[] {
   const categoryById = new Map(categories.map((c) => [c.id, c]))
+  const accountById = new Map(accounts.map((a) => [a.id, a]))
 
   return budgets.map((budget) => {
     const relevantIds = categoryAndDescendantIds(categories, budget.categoryId)
@@ -238,7 +280,10 @@ export function computeBudgetProgress(
         const [year, month] = t.date.split('-').map(Number)
         return year === budget.year && month === budget.month
       })
-      .reduce((sum, t) => sum + t.amountCents, 0)
+      .reduce(
+        (sum, t) => sum + convertedAmount(t.amountCents, t.accountId, accountById, targetCurrency),
+        0,
+      )
 
     const percentUsed = percentOf(spentCents, budget.amountCents)
 
@@ -263,19 +308,25 @@ export interface CashFlow {
 export function computeCashFlow(
   transactions: Transaction[],
   transfers: Transfer[],
+  accounts: Account[],
+  targetCurrency: Currency,
   startISO: string,
   endISO: string,
 ): CashFlow {
+  const accountById = new Map(accounts.map((a) => [a.id, a]))
   const inRange = transactions.filter((t) => isDateInRange(t.date, startISO, endISO))
   const moneyInCents = inRange
     .filter((t) => t.type === 'income')
-    .reduce((s, t) => s + t.amountCents, 0)
+    .reduce((s, t) => s + convertedAmount(t.amountCents, t.accountId, accountById, targetCurrency), 0)
   const moneyOutCents = inRange
     .filter((t) => t.type === 'expense')
-    .reduce((s, t) => s + t.amountCents, 0)
+    .reduce((s, t) => s + convertedAmount(t.amountCents, t.accountId, accountById, targetCurrency), 0)
   const transfersCents = transfers
     .filter((t) => isDateInRange(t.date, startISO, endISO))
-    .reduce((s, t) => s + t.fromAmountCents, 0)
+    .reduce(
+      (s, t) => s + convertedAmount(t.fromAmountCents, t.fromAccountId, accountById, targetCurrency),
+      0,
+    )
 
   return {
     moneyInCents,
@@ -291,19 +342,25 @@ export interface MerchantStat {
   totalSpentCents: number
 }
 
-export function computeMerchantStats(transactions: Transaction[]): MerchantStat[] {
+export function computeMerchantStats(
+  transactions: Transaction[],
+  accounts: Account[],
+  targetCurrency: Currency,
+): MerchantStat[] {
+  const accountById = new Map(accounts.map((a) => [a.id, a]))
   const byMerchant = new Map<string, MerchantStat>()
   for (const t of transactions) {
     if (t.type !== 'expense' || !t.merchant.trim()) continue
+    const converted = convertedAmount(t.amountCents, t.accountId, accountById, targetCurrency)
     const existing = byMerchant.get(t.merchant)
     if (existing) {
       existing.transactionCount += 1
-      existing.totalSpentCents += t.amountCents
+      existing.totalSpentCents += converted
     } else {
       byMerchant.set(t.merchant, {
         merchant: t.merchant,
         transactionCount: 1,
-        totalSpentCents: t.amountCents,
+        totalSpentCents: converted,
       })
     }
   }
@@ -321,12 +378,14 @@ export interface AccountSpendingEntry {
 export function computeSpendingByAccount(
   transactions: Transaction[],
   accounts: Account[],
+  targetCurrency: Currency,
 ): AccountSpendingEntry[] {
   const accountById = new Map(accounts.map((a) => [a.id, a]))
   const totals = new Map<string, number>()
   for (const t of transactions) {
     if (t.type !== 'expense') continue
-    totals.set(t.accountId, (totals.get(t.accountId) ?? 0) + t.amountCents)
+    const converted = convertedAmount(t.amountCents, t.accountId, accountById, targetCurrency)
+    totals.set(t.accountId, (totals.get(t.accountId) ?? 0) + converted)
   }
   const grandTotal = [...totals.values()].reduce((sum, v) => sum + v, 0)
   return [...totals.entries()]
@@ -341,12 +400,18 @@ export function computeSpendingByAccount(
 }
 
 /** Average total monthly expenses across every distinct calendar month present in the data. */
-export function computeAverageMonthlySpending(transactions: Transaction[]): number {
+export function computeAverageMonthlySpending(
+  transactions: Transaction[],
+  accounts: Account[],
+  targetCurrency: Currency,
+): number {
+  const accountById = new Map(accounts.map((a) => [a.id, a]))
   const byMonth = new Map<string, number>()
   for (const t of transactions) {
     if (t.type !== 'expense') continue
     const key = t.date.slice(0, 7)
-    byMonth.set(key, (byMonth.get(key) ?? 0) + t.amountCents)
+    const converted = convertedAmount(t.amountCents, t.accountId, accountById, targetCurrency)
+    byMonth.set(key, (byMonth.get(key) ?? 0) + converted)
   }
   if (byMonth.size === 0) return 0
   const total = [...byMonth.values()].reduce((sum, v) => sum + v, 0)

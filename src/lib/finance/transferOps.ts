@@ -69,6 +69,80 @@ export async function createTransfer(input: TransferInput): Promise<Transfer> {
   return transfer
 }
 
+export async function updateTransfer(id: string, patch: TransferInput): Promise<Transfer> {
+  assertPositiveAmount(patch.fromAmountCents)
+  assertPositiveAmount(patch.toAmountCents)
+  if (patch.exchangeRate <= 0) {
+    throw new Error('Exchange rate must be positive')
+  }
+  if (patch.fromAccountId === patch.toAccountId) {
+    throw new Error('Transfer source and destination accounts must be different')
+  }
+
+  const db = await getDB()
+  const tx = db.transaction(['accounts', 'transfers'], 'readwrite')
+  const transfersStore = tx.objectStore('transfers')
+  const accountsStore = tx.objectStore('accounts')
+
+  const existing = await transfersStore.get(id)
+  if (!existing) throw new Error('Transfer not found')
+
+  const accountIds = [
+    ...new Set([
+      existing.fromAccountId,
+      existing.toAccountId,
+      patch.fromAccountId,
+      patch.toAccountId,
+    ]),
+  ]
+  const accounts = await Promise.all(accountIds.map((accId) => accountsStore.get(accId)))
+  const accountById = new Map(
+    accounts.filter((a): a is Account => !!a).map((a) => [a.id, a]),
+  )
+
+  // Net delta per account: reverse the old transfer's effect, then apply the new
+  // one. Accumulating into the same map (rather than writing twice) handles the
+  // case where an account plays a role in both the old and new transfer.
+  const deltas = new Map<string, number>()
+  function addDelta(accountId: string, amount: number) {
+    deltas.set(accountId, (deltas.get(accountId) ?? 0) + amount)
+  }
+
+  const oldFrom = accountById.get(existing.fromAccountId)
+  if (oldFrom) addDelta(existing.fromAccountId, -debitDelta(oldFrom.type, existing.fromAmountCents))
+  const oldTo = accountById.get(existing.toAccountId)
+  if (oldTo) addDelta(existing.toAccountId, -creditDelta(oldTo.type, existing.toAmountCents))
+
+  const newFrom = accountById.get(patch.fromAccountId)
+  if (!newFrom) throw new Error('Source account not found')
+  addDelta(patch.fromAccountId, debitDelta(newFrom.type, patch.fromAmountCents))
+  const newTo = accountById.get(patch.toAccountId)
+  if (!newTo) throw new Error('Destination account not found')
+  addDelta(patch.toAccountId, creditDelta(newTo.type, patch.toAmountCents))
+
+  const now = new Date().toISOString()
+  const updated: Transfer = {
+    ...existing,
+    fromAccountId: patch.fromAccountId,
+    toAccountId: patch.toAccountId,
+    fromAmountCents: patch.fromAmountCents,
+    toAmountCents: patch.toAmountCents,
+    exchangeRate: patch.exchangeRate,
+    date: patch.date,
+    description: patch.description ?? '',
+    isCreditCardPayment: patch.isCreditCardPayment ?? false,
+  }
+
+  const writes = [...deltas.entries()].map(([accountId, delta]) => {
+    const account = accountById.get(accountId)!
+    return accountsStore.put({ ...account, balanceCents: account.balanceCents + delta, updatedAt: now })
+  })
+
+  await Promise.all([...writes, transfersStore.put(updated), tx.done])
+
+  return updated
+}
+
 export async function deleteTransfer(id: string): Promise<void> {
   const db = await getDB()
   const tx = db.transaction(['accounts', 'transfers'], 'readwrite')

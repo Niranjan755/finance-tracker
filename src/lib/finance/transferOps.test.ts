@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { getDB } from '@/lib/db/client'
 import { toCents } from '@/lib/money'
-import { createTransfer, deleteTransfer } from './transferOps'
+import { createTransfer, deleteTransfer, updateTransfer } from './transferOps'
 import { getAccount, resetTestDB, seedAccount } from './testHelpers'
 
 beforeEach(resetTestDB)
@@ -94,6 +94,126 @@ describe('createTransfer', () => {
         date: '2026-08-14',
       }),
     ).rejects.toThrow()
+  })
+})
+
+describe('updateTransfer', () => {
+  it('changing the amount does not double-apply the original transfer', async () => {
+    await seedAccount({ id: 'checking', balanceCents: toCents('1000') })
+    await seedAccount({ id: 'savings', balanceCents: toCents('500') })
+    const transfer = await createTransfer({
+      fromAccountId: 'checking',
+      toAccountId: 'savings',
+      fromAmountCents: toCents('300'),
+      toAmountCents: toCents('300'),
+      exchangeRate: 1,
+      date: '2026-08-14',
+    })
+    // checking=700, savings=800 after the create.
+
+    await updateTransfer(transfer.id, {
+      fromAccountId: 'checking',
+      toAccountId: 'savings',
+      fromAmountCents: toCents('500'),
+      toAmountCents: toCents('500'),
+      exchangeRate: 1,
+      date: '2026-08-14',
+    })
+
+    expect((await getAccount('checking')).balanceCents).toBe(toCents('500'))
+    expect((await getAccount('savings')).balanceCents).toBe(toCents('1000'))
+    const db = await getDB()
+    expect(await db.getAll('transfers')).toHaveLength(1)
+  })
+
+  it('editing an unrelated field (same amount) leaves balances unchanged', async () => {
+    await seedAccount({ id: 'checking', balanceCents: toCents('1000') })
+    await seedAccount({ id: 'savings', balanceCents: toCents('500') })
+    const transfer = await createTransfer({
+      fromAccountId: 'checking',
+      toAccountId: 'savings',
+      fromAmountCents: toCents('300'),
+      toAmountCents: toCents('300'),
+      exchangeRate: 1,
+      date: '2026-08-14',
+    })
+
+    await updateTransfer(transfer.id, {
+      fromAccountId: 'checking',
+      toAccountId: 'savings',
+      fromAmountCents: toCents('300'),
+      toAmountCents: toCents('300'),
+      exchangeRate: 1,
+      date: '2026-08-14',
+      description: 'Renamed',
+    })
+
+    expect((await getAccount('checking')).balanceCents).toBe(toCents('700'))
+    expect((await getAccount('savings')).balanceCents).toBe(toCents('800'))
+  })
+
+  it('moving the transfer to a different destination account reverses the old and applies the new', async () => {
+    await seedAccount({ id: 'checking', balanceCents: toCents('1000') })
+    await seedAccount({ id: 'savings', balanceCents: toCents('500') })
+    await seedAccount({ id: 'vacation', balanceCents: toCents('0') })
+    const transfer = await createTransfer({
+      fromAccountId: 'checking',
+      toAccountId: 'savings',
+      fromAmountCents: toCents('300'),
+      toAmountCents: toCents('300'),
+      exchangeRate: 1,
+      date: '2026-08-14',
+    })
+    // checking=700, savings=800, vacation=0
+
+    await updateTransfer(transfer.id, {
+      fromAccountId: 'checking',
+      toAccountId: 'vacation',
+      fromAmountCents: toCents('300'),
+      toAmountCents: toCents('300'),
+      exchangeRate: 1,
+      date: '2026-08-14',
+    })
+
+    expect((await getAccount('checking')).balanceCents).toBe(toCents('700'))
+    expect((await getAccount('savings')).balanceCents).toBe(toCents('500'))
+    expect((await getAccount('vacation')).balanceCents).toBe(toCents('300'))
+  })
+
+  it('editing across the credit-card-payment boundary applies the new delta direction', async () => {
+    await seedAccount({ id: 'checking', balanceCents: toCents('2000') })
+    await seedAccount({ id: 'savings', balanceCents: toCents('500') })
+    await seedAccount({
+      id: 'visa',
+      type: 'credit_card',
+      balanceCents: toCents('820'),
+      creditLimitCents: toCents('5000'),
+    })
+    const transfer = await createTransfer({
+      fromAccountId: 'checking',
+      toAccountId: 'savings',
+      fromAmountCents: toCents('500'),
+      toAmountCents: toCents('500'),
+      exchangeRate: 1,
+      date: '2026-08-14',
+    })
+    // checking=1500, savings=1000, visa=820
+
+    await updateTransfer(transfer.id, {
+      fromAccountId: 'checking',
+      toAccountId: 'visa',
+      fromAmountCents: toCents('500'),
+      toAmountCents: toCents('500'),
+      exchangeRate: 1,
+      date: '2026-08-14',
+      isCreditCardPayment: true,
+    })
+
+    // "from" account (checking) is unchanged between old and new, so its debit
+    // reverses and reapplies to a net-zero change; only savings/visa move.
+    expect((await getAccount('checking')).balanceCents).toBe(toCents('1500'))
+    expect((await getAccount('savings')).balanceCents).toBe(toCents('500'))
+    expect((await getAccount('visa')).balanceCents).toBe(toCents('320'))
   })
 })
 

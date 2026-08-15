@@ -32,8 +32,8 @@ export function computeInsights(
   const bounds = getMonthBounds(asOfDate.getFullYear(), asOfDate.getMonth() + 1)
   const prevBounds = previousMonthBounds(bounds)
 
-  const current = computeMonthlyStatement(accounts, transactions, [], bounds)
-  const previous = computeMonthlyStatement(accounts, transactions, [], prevBounds)
+  const current = computeMonthlyStatement(accounts, transactions, [], bounds, currency)
+  const previous = computeMonthlyStatement(accounts, transactions, [], prevBounds, currency)
 
   // Largest expense this month.
   if (current.largestExpense) {
@@ -47,6 +47,8 @@ export function computeInsights(
   const currentBreakdown = computeCategoryBreakdown(
     current.expenseTransactions,
     categories,
+    accounts,
+    currency,
     'expense',
   )
   if (currentBreakdown.length > 0 && current.totalExpenseCents > 0) {
@@ -61,6 +63,8 @@ export function computeInsights(
   const previousBreakdown = computeCategoryBreakdown(
     previous.expenseTransactions,
     categories,
+    accounts,
+    currency,
     'expense',
   )
   const previousByCategory = new Map(previousBreakdown.map((e) => [e.categoryId, e.amountCents]))
@@ -101,9 +105,9 @@ export function computeInsights(
 
   // Net worth change this month (guarded against a zero or unknown starting base).
   const dayBeforeMonthStart = toISODate(addDays(parseISODate(bounds.startISO), -1))
-  const startOfMonthNetWorth = netWorthAsOf(accounts, transactions, dayBeforeMonthStart)
+  const startOfMonthNetWorth = netWorthAsOf(accounts, transactions, dayBeforeMonthStart, currency)
   if (startOfMonthNetWorth !== 0) {
-    const currentNetWorth = netWorthAsOf(accounts, transactions, asOfISO)
+    const currentNetWorth = netWorthAsOf(accounts, transactions, asOfISO, currency)
     const changePercent = percentOf(
       currentNetWorth - startOfMonthNetWorth,
       Math.abs(startOfMonthNetWorth),

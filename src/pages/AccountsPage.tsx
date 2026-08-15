@@ -27,6 +27,7 @@ import type { AccountFormValues } from '@/lib/validation/account'
 
 export function AccountsPage() {
   const accounts = useFinanceStore((s) => s.accounts)
+  const currency = useFinanceStore((s) => s.settings.currency)
   const addAccount = useFinanceStore((s) => s.addAccount)
   const updateAccount = useFinanceStore((s) => s.updateAccount)
   const removeAccount = useFinanceStore((s) => s.removeAccount)
@@ -35,7 +36,7 @@ export function AccountsPage() {
   const [editingAccount, setEditingAccount] = useState<Account | undefined>(undefined)
   const [deletingAccount, setDeletingAccount] = useState<Account | null>(null)
 
-  const totals = computeAccountTotals(accounts)
+  const totals = computeAccountTotals(accounts, currency)
   const totalsByCurrency = Object.values(totals.byCurrency).filter(
     (group) => group.totalAssetsCents > 0 || group.totalLiabilitiesCents > 0,
   )
