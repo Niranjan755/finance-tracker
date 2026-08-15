@@ -12,7 +12,7 @@ import {
   transactionFormSchema,
   type TransactionFormValues,
 } from '@/lib/validation/transaction'
-import { centsToInputValue, toCents } from '@/lib/money'
+import { centsToInputValue, CURRENCIES, toCents } from '@/lib/money'
 import { todayISODate } from '@/lib/date'
 import type { Account, Category, Transaction, TransactionType } from '@/types'
 import type { TransactionFormInput } from '@/store/financeStore'
@@ -40,6 +40,7 @@ export function ExpenseIncomeForm({
     register,
     handleSubmit,
     control,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<TransactionFormValues>({
     resolver: zodResolver(transactionFormSchema),
@@ -57,6 +58,9 @@ export function ExpenseIncomeForm({
   })
 
   const amountLabel = type === 'expense' ? 'Amount' : 'Amount'
+  const selectedAccountId = watch('accountId')
+  const selectedAccountCurrency = accounts.find((a) => a.id === selectedAccountId)?.currency
+  const currencySymbol = CURRENCIES.find((c) => c.code === selectedAccountCurrency)?.symbol ?? '$'
 
   return (
     <form
@@ -81,7 +85,7 @@ export function ExpenseIncomeForm({
           <FieldLabel htmlFor={`${type}-amount`}>{amountLabel}</FieldLabel>
           <div className="relative">
             <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2">
-              $
+              {currencySymbol}
             </span>
             <Input
               id={`${type}-amount`}
