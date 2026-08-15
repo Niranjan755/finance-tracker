@@ -10,6 +10,7 @@ import {
   computeCategoryBreakdown,
   computeMonthlyStatement,
   computeSpendingByAccount,
+  netWorthAsOf,
 } from './calculations'
 
 function account(overrides: Partial<Account> = {}): Account {
@@ -74,7 +75,9 @@ describe('computeAccountTotals', () => {
 
     expect(totals.totalAssetsCents).toBe(toCents('4600'))
     expect(totals.totalLiabilitiesCents).toBe(toCents('820'))
-    expect(totals.netWorthCents).toBe(toCents('3780'))
+    // Net worth is asset accounts only - credit card debt is never netted
+    // against it, it's shown as its own separate figure.
+    expect(totals.netWorthCents).toBe(toCents('4600'))
     expect(totals.availableCashCents).toBe(toCents('4600'))
     expect(totals.creditCardDebtCents).toBe(toCents('820'))
   })
@@ -113,6 +116,42 @@ describe('computeAccountTotals', () => {
       'INR',
     )
     expect(totals.totalAssetsCents).toBe(convertCentsToCurrency(toCents('100'), 'USD', 'INR'))
+  })
+})
+
+describe('netWorthAsOf', () => {
+  it('is unaffected by a credit card balance, however large', () => {
+    const accounts = [
+      account({ id: 'checking', type: 'checking', balanceCents: toCents('1000') }),
+      account({
+        id: 'visa',
+        type: 'credit_card',
+        balanceCents: toCents('50000'),
+        creditLimitCents: toCents('60000'),
+      }),
+    ]
+    expect(netWorthAsOf(accounts, [], '2026-08-14', 'USD')).toBe(toCents('1000'))
+  })
+
+  it('does not roll back a credit card transaction, since it was never counted', () => {
+    const accounts = [
+      account({ id: 'checking', type: 'checking', balanceCents: toCents('1000') }),
+      account({ id: 'visa', type: 'credit_card', balanceCents: toCents('300') }),
+    ]
+    const transactions: Transaction[] = [
+      txn({ accountId: 'visa', type: 'expense', amountCents: toCents('300'), date: '2026-08-10' }),
+    ]
+    // Asking for net worth before the credit card expense happened must still
+    // equal today's asset-only net worth - the expense never touched it.
+    expect(netWorthAsOf(accounts, transactions, '2026-08-05', 'USD')).toBe(toCents('1000'))
+  })
+
+  it('still rolls back a checking-account transaction correctly', () => {
+    const accounts = [account({ id: 'checking', type: 'checking', balanceCents: toCents('1000') })]
+    const transactions: Transaction[] = [
+      txn({ accountId: 'checking', type: 'expense', amountCents: toCents('300'), date: '2026-08-10' }),
+    ]
+    expect(netWorthAsOf(accounts, transactions, '2026-08-05', 'USD')).toBe(toCents('1300'))
   })
 })
 

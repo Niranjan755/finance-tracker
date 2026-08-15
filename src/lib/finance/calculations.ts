@@ -74,13 +74,16 @@ export function computeAccountTotals(accounts: Account[], targetCurrency: Curren
       }
     }
 
-    bucket.netWorthCents = bucket.totalAssetsCents - bucket.totalLiabilitiesCents
+    // Net worth is asset accounts only - credit card debt is tracked
+    // separately and never netted against it (shown as its own "Credit Card
+    // Debt" figure everywhere it's displayed).
+    bucket.netWorthCents = bucket.totalAssetsCents
   }
 
   const totals = {
     totalAssetsCents: totalAssets,
     totalLiabilitiesCents: totalLiabilities,
-    netWorthCents: totalAssets - totalLiabilities,
+    netWorthCents: totalAssets,
     availableCashCents: availableCash,
     creditCardDebtCents: creditCardDebt,
     byCurrency,
@@ -93,7 +96,9 @@ export function computeAccountTotals(accounts: Account[], targetCurrency: Curren
  * Reconstructs total net worth as of the end of `asOfISO` by rolling back
  * every income/expense transaction dated after it. Transfers are excluded
  * on purpose: moving money between the user's own accounts never changes
- * net worth, so they need no adjustment here.
+ * net worth, so they need no adjustment here. Transactions on credit card
+ * accounts are also excluded, since net worth only tracks asset accounts and
+ * never included them in the first place.
  */
 export function netWorthAsOf(
   accounts: Account[],
@@ -106,6 +111,8 @@ export function netWorthAsOf(
   let adjustment = 0
   for (const t of transactions) {
     if (t.date > asOfISO) {
+      const account = accountById.get(t.accountId)
+      if (account && isLiabilityAccountType(account.type)) continue
       const converted = convertedAmount(t.amountCents, t.accountId, accountById, targetCurrency)
       adjustment += t.type === 'income' ? -converted : converted
     }
