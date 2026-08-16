@@ -30,6 +30,7 @@ import {
 } from '@/lib/finance/timeSeries'
 import { getMonthBounds, isDateInRange, todayISODate } from '@/lib/date'
 import { getIcon } from '@/lib/icons'
+import { isLiabilityAccountType } from '@/lib/finance/math'
 import { formatCurrency } from '@/lib/money'
 import type { Currency } from '@/types'
 
@@ -278,7 +279,7 @@ export function DashboardPage() {
           <Card className="divide-y p-1">
             {accounts.map((account) => {
               const Icon = getIcon(account.icon)
-              const isLiability = account.type === 'credit_card'
+              const isLiability = isLiabilityAccountType(account.type)
               return (
                 <button
                   key={account.id}

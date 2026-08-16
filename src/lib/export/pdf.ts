@@ -3,6 +3,7 @@ import { autoTable } from 'jspdf-autotable'
 import { formatCurrency } from '@/lib/money'
 import { formatDisplayDate } from '@/lib/date'
 import type { CategoryBreakdownEntry, MonthlyStatement } from '@/lib/finance/calculations'
+import { isLiabilityAccountType } from '@/lib/finance/math'
 import type { Account, Category, Currency } from '@/types'
 
 export interface StatementPDFInput {
@@ -118,7 +119,7 @@ export function generateMonthlyStatementPDF(input: StatementPDFInput): jsPDF {
     body: accounts.map((a) => [
       a.name,
       a.type,
-      a.type === 'credit_card'
+      isLiabilityAccountType(a.type)
         ? `-${formatCurrency(a.balanceCents, a.currency)}`
         : formatCurrency(a.balanceCents, a.currency),
     ]),

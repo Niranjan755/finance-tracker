@@ -1,7 +1,19 @@
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { formatDistanceToNow } from 'date-fns'
-import { Cloud, Download, FileDown, Info, LogOut, Mail, Sparkles, Trash2, Upload } from 'lucide-react'
+import {
+  Cloud,
+  Download,
+  FileDown,
+  Info,
+  Landmark,
+  LogOut,
+  Mail,
+  RefreshCw,
+  Sparkles,
+  Trash2,
+  Upload,
+} from 'lucide-react'
 import { PageHeader } from '@/components/finance/PageHeader'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -27,9 +39,11 @@ import {
 } from '@/components/ui/alert-dialog'
 import { CategoryManager } from '@/features/settings/CategoryManager'
 import { CSVImportDialog } from '@/features/import/CSVImportDialog'
+import { PlaidLinkButton } from '@/features/settings/PlaidLinkButton'
 import { useFinanceStore } from '@/store/financeStore'
 import { useAuthStore } from '@/store/authStore'
 import { isSupabaseConfigured } from '@/lib/supabase/client'
+import { syncPlaidNow, unlinkPlaidItem } from '@/lib/plaid/client'
 import { CURRENCIES } from '@/lib/money'
 import { exportTransactionsToCSV } from '@/lib/export/csv'
 import { buildBackup, downloadBackupJSON, parseBackupJSON } from '@/lib/export/json'
@@ -100,6 +114,38 @@ export function SettingsPage() {
     }
   }
 
+  const [plaidSyncing, setPlaidSyncing] = useState(false)
+  const [unlinkingItemId, setUnlinkingItemId] = useState<string | null>(null)
+
+  async function handlePlaidSyncNow() {
+    setPlaidSyncing(true)
+    try {
+      const result = await syncPlaidNow()
+      const total = result.added + result.modified + result.removed
+      toast.success(total > 0 ? `Synced ${total} transaction change(s)` : 'Already up to date')
+    } catch (error) {
+      toast.error('Unable to sync bank accounts', {
+        description: error instanceof Error ? error.message : undefined,
+      })
+    } finally {
+      setPlaidSyncing(false)
+    }
+  }
+
+  async function handleUnlinkBank(itemId: string) {
+    setUnlinkingItemId(itemId)
+    try {
+      await unlinkPlaidItem(itemId)
+      toast.success('Bank unlinked')
+    } catch (error) {
+      toast.error('Unable to unlink bank', {
+        description: error instanceof Error ? error.message : undefined,
+      })
+    } finally {
+      setUnlinkingItemId(null)
+    }
+  }
+
   function handleExportJSON() {
     const backup = buildBackup({
       accounts,
@@ -151,6 +197,14 @@ export function SettingsPage() {
     await clearAllData()
     setClearConfirmOpen(false)
     toast.success('All data cleared')
+  }
+
+  const linkedBanks = new Map<string, { institution: string; accountCount: number }>()
+  for (const a of accounts) {
+    if (!a.plaidItemId) continue
+    const existing = linkedBanks.get(a.plaidItemId)
+    if (existing) existing.accountCount += 1
+    else linkedBanks.set(a.plaidItemId, { institution: a.institution || 'Linked bank', accountCount: 1 })
   }
 
   return (
@@ -335,6 +389,62 @@ export function SettingsPage() {
             </div>
           )}
         </Section>
+
+        {isSupabaseConfigured() && authStatus === 'signed-in' && (
+          <Section title="Linked Banks">
+            <div className="space-y-3">
+              <p className="text-muted-foreground text-sm">
+                Link a USD bank account to automatically sync its transactions, balance, and
+                charges - no manual entry. Currently Sandbox mode only (test banks, not your real
+                one) while this is being set up.
+              </p>
+
+              {linkedBanks.size > 0 && (
+                <div className="space-y-2">
+                  {[...linkedBanks.entries()].map(([itemId, bank]) => (
+                    <div
+                      key={itemId}
+                      className="flex items-center justify-between rounded-lg border px-3 py-2"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Landmark className="text-muted-foreground size-4" aria-hidden="true" />
+                        <div>
+                          <p className="text-sm font-medium">{bank.institution}</p>
+                          <p className="text-muted-foreground text-xs">
+                            {bank.accountCount} account{bank.accountCount === 1 ? '' : 's'} synced
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={unlinkingItemId === itemId}
+                        onClick={() => handleUnlinkBank(itemId)}
+                      >
+                        Unlink
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-2">
+                <PlaidLinkButton />
+                {linkedBanks.size > 0 && (
+                  <Button
+                    variant="outline"
+                    onClick={handlePlaidSyncNow}
+                    disabled={plaidSyncing}
+                    className="gap-1.5"
+                  >
+                    <RefreshCw className="size-4" aria-hidden="true" />
+                    Sync Now
+                  </Button>
+                )}
+              </div>
+            </div>
+          </Section>
+        )}
 
         <Section title="Data">
           <div className="space-y-3">

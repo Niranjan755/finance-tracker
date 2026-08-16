@@ -53,6 +53,7 @@ export async function createTransaction(input: TransactionInput): Promise<Transa
     location: input.location ?? '',
     receiptId: null,
     recurringId: input.recurringId ?? null,
+    plaidTransactionId: null,
     createdAt: now,
     updatedAt: now,
   }

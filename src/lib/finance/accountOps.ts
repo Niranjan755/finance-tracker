@@ -33,6 +33,8 @@ export async function createAccount(input: CreateAccountInput): Promise<Account>
     color: input.color,
     isActive: true,
     notes: input.notes,
+    plaidAccountId: null,
+    plaidItemId: null,
     createdAt: now,
     updatedAt: now,
   }

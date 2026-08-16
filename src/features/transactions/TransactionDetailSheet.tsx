@@ -86,6 +86,7 @@ export function TransactionDetailSheet({ transaction, onClose }: TransactionDeta
                 currency={account?.currency}
                 className="text-3xl font-semibold"
               />
+              {transaction.plaidTransactionId && <Badge variant="secondary">Synced via Plaid</Badge>}
             </div>
 
             <dl className="space-y-3 text-sm">
@@ -128,30 +129,37 @@ export function TransactionDetailSheet({ transaction, onClose }: TransactionDeta
 
             <ReceiptSection transactionId={transaction.id} />
 
-            <div className="grid grid-cols-3 gap-2">
-              <Button
-                variant="outline"
-                className="flex-col gap-1 py-4"
-                onClick={() => {
-                  openEditTransaction(transaction.id)
-                }}
-              >
-                <Pencil className="size-4" aria-hidden="true" />
-                Edit
-              </Button>
-              <Button variant="outline" className="flex-col gap-1 py-4" onClick={handleDuplicate}>
-                <Copy className="size-4" aria-hidden="true" />
-                Duplicate
-              </Button>
-              <Button
-                variant="outline"
-                className="text-destructive flex-col gap-1 py-4"
-                onClick={() => setDeleteOpen(true)}
-              >
-                <Trash2 className="size-4" aria-hidden="true" />
-                Delete
-              </Button>
-            </div>
+            {transaction.plaidTransactionId ? (
+              <p className="bg-muted/40 text-muted-foreground rounded-lg border px-3 py-2 text-xs">
+                This transaction was imported from your linked bank and updates automatically -
+                it can't be edited or deleted here. Unlink the bank in Settings to stop syncing it.
+              </p>
+            ) : (
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-col gap-1 py-4"
+                  onClick={() => {
+                    openEditTransaction(transaction.id)
+                  }}
+                >
+                  <Pencil className="size-4" aria-hidden="true" />
+                  Edit
+                </Button>
+                <Button variant="outline" className="flex-col gap-1 py-4" onClick={handleDuplicate}>
+                  <Copy className="size-4" aria-hidden="true" />
+                  Duplicate
+                </Button>
+                <Button
+                  variant="outline"
+                  className="text-destructive flex-col gap-1 py-4"
+                  onClick={() => setDeleteOpen(true)}
+                >
+                  <Trash2 className="size-4" aria-hidden="true" />
+                  Delete
+                </Button>
+              </div>
+            )}
           </div>
         </SheetContent>
       </Sheet>

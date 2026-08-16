@@ -1,4 +1,5 @@
 import { getIcon } from '@/lib/icons'
+import { isLiabilityAccountType } from '@/lib/finance/math'
 import { formatCurrency } from '@/lib/money'
 import { cn } from '@/lib/utils'
 import type { Account } from '@/types'
@@ -18,13 +19,18 @@ export function AccountSelector({
   label,
   excludeAccountId,
 }: AccountSelectorProps) {
-  const options = accounts.filter((a) => a.isActive && a.id !== excludeAccountId)
+  // Plaid-linked accounts sync their balance directly from the bank, so
+  // manually adding money into/out of them would just get overwritten by
+  // the next sync - exclude them from manual entry entirely.
+  const options = accounts.filter(
+    (a) => a.isActive && a.id !== excludeAccountId && !a.plaidAccountId,
+  )
 
   return (
     <div role="radiogroup" aria-label={label} className="space-y-1.5">
       {options.map((account) => {
         const Icon = getIcon(account.icon)
-        const isLiability = account.type === 'credit_card'
+        const isLiability = isLiabilityAccountType(account.type)
         const selected = value === account.id
         return (
           <button

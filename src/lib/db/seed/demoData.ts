@@ -49,6 +49,8 @@ export async function generateDemoData(): Promise<{
     color: '#2a78d6',
     isActive: true,
     notes: '',
+    plaidAccountId: null,
+    plaidItemId: null,
     createdAt: now,
     updatedAt: now,
   }
@@ -123,6 +125,7 @@ export async function generateDemoData(): Promise<{
       location: '',
       receiptId: null,
       recurringId: null,
+      plaidTransactionId: null,
       createdAt: now,
       updatedAt: now,
     })

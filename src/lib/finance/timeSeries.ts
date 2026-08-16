@@ -3,6 +3,7 @@ import { parseISODate, toISODate } from '@/lib/date'
 import { convertCentsToCurrency } from '@/lib/money'
 import type { Account, Currency, Transaction } from '@/types'
 import { netWorthAsOf } from './calculations'
+import { isLiabilityAccountType } from './math'
 
 export type DateRangePreset = '7d' | '30d' | '3m' | '6m' | '1y' | 'custom'
 
@@ -172,7 +173,7 @@ function balanceAsOf(account: Account, transactions: Transaction[], asOfISO: str
     if (t.accountId !== account.id) continue
     if (t.date <= asOfISO) continue
     // Roll back transactions that happened after the as-of date.
-    const isLiability = account.type === 'credit_card'
+    const isLiability = isLiabilityAccountType(account.type)
     const delta =
       t.type === 'expense'
         ? isLiability

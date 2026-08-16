@@ -9,6 +9,7 @@ export const ACCOUNT_TYPES = [
   'debit_card',
   'credit_card',
   'investment',
+  'loan',
   'other',
 ] as const
 
@@ -19,6 +20,7 @@ export const ACCOUNT_TYPE_LABELS: Record<(typeof ACCOUNT_TYPES)[number], string>
   debit_card: 'Debit Card',
   credit_card: 'Credit Card',
   investment: 'Investment',
+  loan: 'Loan',
   other: 'Other',
 }
 

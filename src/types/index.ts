@@ -1,10 +1,17 @@
 export type Currency = 'USD' | 'INR' | 'EUR' | 'GBP' | 'CAD' | 'AUD'
 
 export type AccountType =
-  'checking' | 'savings' | 'cash' | 'debit_card' | 'credit_card' | 'investment' | 'other'
+  | 'checking'
+  | 'savings'
+  | 'cash'
+  | 'debit_card'
+  | 'credit_card'
+  | 'investment'
+  | 'loan'
+  | 'other'
 
 /** Account types whose balance is a liability (owed money), not an asset. */
-export const LIABILITY_ACCOUNT_TYPES: readonly AccountType[] = ['credit_card']
+export const LIABILITY_ACCOUNT_TYPES: readonly AccountType[] = ['credit_card', 'loan']
 
 export interface Account {
   id: string
@@ -27,6 +34,10 @@ export interface Account {
   color: string
   isActive: boolean
   notes: string
+  /** Set when this account is linked to a real bank via Plaid; balance and transactions sync automatically and become read-only. */
+  plaidAccountId: string | null
+  /** The Plaid Item (bank connection) this account belongs to - used to unlink all accounts from one bank at once. */
+  plaidItemId: string | null
   createdAt: string
   updatedAt: string
 }
@@ -61,6 +72,8 @@ export interface Transaction {
   location: string
   receiptId: string | null
   recurringId: string | null
+  /** Set when this transaction was imported from Plaid - used for sync idempotency and to mark it read-only in the UI. */
+  plaidTransactionId: string | null
   createdAt: string
   updatedAt: string
 }

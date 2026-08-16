@@ -147,6 +147,7 @@ export async function generateDueOccurrences(today = todayISODate()): Promise<nu
         location: '',
         receiptId: null,
         recurringId: cursor.id,
+        plaidTransactionId: null,
         createdAt: now,
         updatedAt: now,
       }

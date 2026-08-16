@@ -31,6 +31,8 @@ export async function seedAccount(overrides: Partial<Account> = {}): Promise<Acc
     color: '#6366f1',
     isActive: true,
     notes: '',
+    plaidAccountId: null,
+    plaidItemId: null,
     createdAt: new Date(0).toISOString(),
     updatedAt: new Date(0).toISOString(),
     ...overrides,

@@ -20,6 +20,8 @@ const accounts: Account[] = [
     color: '',
     isActive: true,
     notes: '',
+    plaidAccountId: null,
+    plaidItemId: null,
     createdAt: '',
     updatedAt: '',
   },
