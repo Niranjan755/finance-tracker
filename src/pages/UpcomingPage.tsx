@@ -111,9 +111,9 @@ export function UpcomingPage() {
     setDeletingRecurring(null)
   }
 
-  async function handleRecordNow(id: string) {
+  async function handleRecordNow(id: string, date: string) {
     try {
-      await postRecurringNow(id)
+      await postRecurringNow(id, date)
       toast.success('Transaction recorded')
     } catch (err) {
       toast.error('Unable to record transaction', {
@@ -207,7 +207,7 @@ export function UpcomingPage() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => handleRecordNow(o.recurringId)}
+                    onClick={() => handleRecordNow(o.recurringId, o.date)}
                   >
                     Record Now
                   </Button>

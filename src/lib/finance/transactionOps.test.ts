@@ -183,6 +183,32 @@ describe('updateTransaction', () => {
     // Reverse the expense (+100) then apply income (+100) => net +200 from the 900 baseline.
     expect((await getAccount('checking')).balanceCents).toBe(toCents('1100'))
   })
+
+  it('does not partially commit a reversal when the target account does not exist', async () => {
+    await seedAccount({ id: 'checking', balanceCents: toCents('1000') })
+    const txn = await createTransaction({
+      accountId: 'checking',
+      categoryId: 'cat_food',
+      type: 'expense',
+      amountCents: toCents('100'),
+      date: '2026-08-14',
+    })
+    // checking = 900
+
+    await expect(
+      updateTransaction(txn.id, {
+        accountId: 'does-not-exist',
+        categoryId: 'cat_food',
+        type: 'expense',
+        amountCents: toCents('100'),
+        date: '2026-08-14',
+      }),
+    ).rejects.toThrow()
+
+    // The reversal against checking must not have been applied - it should
+    // still reflect the original transaction, not have silently reverted.
+    expect((await getAccount('checking')).balanceCents).toBe(toCents('900'))
+  })
 })
 
 describe('deleteTransaction', () => {

@@ -27,6 +27,7 @@ import {
 } from '@/lib/finance/transactionOps'
 import { createTransfer, deleteTransfer, updateTransfer } from '@/lib/finance/transferOps'
 import { attachReceipt, removeReceipt } from '@/lib/finance/receiptOps'
+import { dueOccurrencesForAll, type DueRecurringEntry } from '@/lib/finance/recurringProjection'
 import type {
   Account,
   Budget,
@@ -106,8 +107,9 @@ interface FinanceState {
     patch: Partial<Omit<RecurringTransaction, 'id' | 'createdAt'>>,
   ) => Promise<void>
   removeRecurring: (id: string) => Promise<void>
-  postRecurringNow: (id: string) => Promise<void>
+  postRecurringNow: (id: string, date?: string) => Promise<void>
   runDueRecurring: () => Promise<number>
+  previewDueRecurring: () => DueRecurringEntry[]
 
   updateSettings: (patch: Partial<Settings>) => Promise<void>
 
@@ -423,8 +425,8 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
     set((s) => ({ recurring: s.recurring.filter((r) => r.id !== id) }))
   },
 
-  async postRecurringNow(id) {
-    const transaction = await recordRecurringNow(id)
+  async postRecurringNow(id, date) {
+    const transaction = await recordRecurringNow(id, date)
     const [account, recurringRows] = await Promise.all([
       refetchAccount(transaction.accountId),
       getAllFromStore('recurring'),
@@ -447,6 +449,10 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
       set({ accounts, transactions, recurring })
     }
     return count
+  },
+
+  previewDueRecurring() {
+    return dueOccurrencesForAll(get().recurring, todayISODate())
   },
 
   async updateSettings(patch) {

@@ -1,13 +1,15 @@
-import { lazy, Suspense, useEffect } from 'react'
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { lazy, Suspense, useEffect, useState } from 'react'
+import { BrowserRouter, Route, Routes, useNavigate } from 'react-router-dom'
 import { Toaster } from '@/components/ui/sonner'
 import { Skeleton } from '@/components/ui/skeleton'
 import { AppShell } from '@/components/layout/AppShell'
 import { OnboardingFlow } from '@/features/onboarding/OnboardingFlow'
+import { RecurringCatchUpDialog } from '@/features/recurring/RecurringCatchUpDialog'
 import { useThemeSync } from '@/hooks/useThemeSync'
 import { useFinanceStore } from '@/store/financeStore'
 import { useAuthStore } from '@/store/authStore'
 import { initSyncEngine } from '@/lib/sync/engine'
+import type { DueRecurringEntry } from '@/lib/finance/recurringProjection'
 
 const DashboardPage = lazy(() =>
   import('@/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })),
@@ -64,12 +66,16 @@ function ErrorScreen({ message }: { message: string }) {
 }
 
 function AppContent() {
+  const navigate = useNavigate()
   const status = useFinanceStore((s) => s.status)
   const error = useFinanceStore((s) => s.error)
   const init = useFinanceStore((s) => s.init)
+  const accounts = useFinanceStore((s) => s.accounts)
   const runDueRecurring = useFinanceStore((s) => s.runDueRecurring)
+  const previewDueRecurring = useFinanceStore((s) => s.previewDueRecurring)
   const autoGenerateRecurring = useFinanceStore((s) => s.settings.autoGenerateRecurring)
   const onboardingComplete = useFinanceStore((s) => s.settings.onboardingComplete)
+  const [catchUpEntries, setCatchUpEntries] = useState<DueRecurringEntry[]>([])
   useThemeSync()
 
   useEffect(() => {
@@ -81,7 +87,13 @@ function AppContent() {
 
   useEffect(() => {
     if (status === 'ready' && autoGenerateRecurring) {
-      runDueRecurring()
+      const due = previewDueRecurring()
+      const hasBacklog = due.some((entry) => entry.occurrences.length > 1)
+      if (hasBacklog) {
+        setCatchUpEntries(due)
+      } else {
+        runDueRecurring()
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, autoGenerateRecurring])
@@ -106,6 +118,20 @@ function AppContent() {
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Routes>
+      <RecurringCatchUpDialog
+        open={catchUpEntries.length > 0}
+        entries={catchUpEntries}
+        accounts={accounts}
+        onRecordAll={() => {
+          setCatchUpEntries([])
+          runDueRecurring()
+        }}
+        onReviewEach={() => {
+          setCatchUpEntries([])
+          navigate('/upcoming')
+        }}
+        onCancel={() => setCatchUpEntries([])}
+      />
     </Suspense>
   )
 }

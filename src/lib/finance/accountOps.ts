@@ -64,20 +64,30 @@ export interface DeleteAccountResult {
   reason?: string
 }
 
-/** Refuses to delete an account with transaction/transfer history to protect referential integrity. */
+/**
+ * Refuses to delete an account with transaction/transfer history to protect
+ * referential integrity. The reference-count checks and the delete all run
+ * inside one shared transaction (rather than separate calls) so a
+ * transaction/transfer can't be created against this account in the window
+ * between "it's unused" and the actual delete.
+ */
 export async function deleteAccountIfUnused(id: string): Promise<DeleteAccountResult> {
   const db = await getDB()
+  const tx = db.transaction(['transactions', 'transfers', 'accounts'], 'readwrite')
   const [txnCount, fromCount, toCount] = await Promise.all([
-    db.countFromIndex('transactions', 'by-account', id),
-    db.countFromIndex('transfers', 'by-fromAccount', id),
-    db.countFromIndex('transfers', 'by-toAccount', id),
+    tx.objectStore('transactions').index('by-account').count(id),
+    tx.objectStore('transfers').index('by-fromAccount').count(id),
+    tx.objectStore('transfers').index('by-toAccount').count(id),
   ])
   if (txnCount + fromCount + toCount > 0) {
+    // No writes were made in this transaction, so it's safe to just let it
+    // complete as a no-op read rather than aborting it.
+    await tx.done
     return {
       deleted: false,
       reason: 'This account has transaction history and cannot be deleted. Deactivate it instead.',
     }
   }
-  await db.delete('accounts', id)
+  await Promise.all([tx.objectStore('accounts').delete(id), tx.done])
   return { deleted: true }
 }

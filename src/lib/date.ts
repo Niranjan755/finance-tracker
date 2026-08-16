@@ -7,10 +7,12 @@ import {
   endOfMonth,
   format,
   formatISO,
+  getDate,
   isAfter,
   isBefore,
   isValid,
   parseISO,
+  setDate,
   startOfMonth,
   subMonths,
 } from 'date-fns'
@@ -77,8 +79,32 @@ export function isDateInRange(iso: string, startISO: string, endISO: string): bo
   return iso >= startISO && iso <= endISO
 }
 
-/** Advances a date by one occurrence of the given recurrence frequency. */
-export function advanceByFrequency(date: Date, frequency: RecurrenceFrequency): Date {
+/**
+ * Advances a `date` by one month/quarter, then re-anchors the result to
+ * `anchorDay` (clamped to the target month's length) instead of trusting
+ * whatever day `date-fns` clamped to. Without this, a rule anchored on the
+ * 31st permanently drifts downward the first time it crosses a shorter
+ * month (Aug 31 -> Sep 30 -> Oct 30 -> ... never back to 31), because each
+ * step re-clamps from the *previous* occurrence rather than the original
+ * start date.
+ */
+function anchoredMonthAdvance(date: Date, months: number, anchorDay: number): Date {
+  const advanced = addMonths(date, months)
+  const lastDayOfTargetMonth = getDate(endOfMonth(advanced))
+  return setDate(advanced, Math.min(anchorDay, lastDayOfTargetMonth))
+}
+
+/**
+ * Advances a date by one occurrence of the given recurrence frequency.
+ * `anchorDay` (typically the day-of-month of the rule's original start
+ * date) keeps monthly/quarterly schedules from drifting after crossing a
+ * shorter month - pass it whenever advancing a persisted recurring rule.
+ */
+export function advanceByFrequency(
+  date: Date,
+  frequency: RecurrenceFrequency,
+  anchorDay?: number,
+): Date {
   switch (frequency) {
     case 'daily':
       return addDays(date, 1)
@@ -87,9 +113,9 @@ export function advanceByFrequency(date: Date, frequency: RecurrenceFrequency): 
     case 'biweekly':
       return addWeeks(date, 2)
     case 'monthly':
-      return addMonths(date, 1)
+      return anchorDay ? anchoredMonthAdvance(date, 1, anchorDay) : addMonths(date, 1)
     case 'quarterly':
-      return addQuarters(date, 1)
+      return anchorDay ? anchoredMonthAdvance(date, 3, anchorDay) : addQuarters(date, 1)
     case 'yearly':
       return addYears(date, 1)
   }

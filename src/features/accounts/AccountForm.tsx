@@ -92,6 +92,7 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
                 <Select
                   value={field.value}
                   onValueChange={field.onChange}
+                  disabled={!!account}
                   items={ACCOUNT_TYPE_LABELS}
                 >
                   <SelectTrigger id="acct-type" className="w-full">
@@ -107,6 +108,11 @@ export function AccountForm({ account, onSubmit, onCancel }: AccountFormProps) {
                 </Select>
               )}
             />
+            {account && (
+              <p className="text-muted-foreground text-xs">
+                Account type can't be changed after creation — create a new account instead.
+              </p>
+            )}
           </Field>
         </div>
 

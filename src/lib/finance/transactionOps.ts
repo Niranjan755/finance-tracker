@@ -79,10 +79,20 @@ export async function updateTransaction(id: string, input: TransactionInput): Pr
   const oldAccount = await accountsStore.get(existing.accountId)
   if (!oldAccount) throw new Error('Account not found')
 
+  // Validate the target account exists before writing anything, so a missing
+  // account can't leave a partial reversal committed (this all runs inside
+  // one readwrite transaction, but IndexedDB has no automatic rollback on a
+  // thrown error - only an explicit tx.abort() would undo an already-applied
+  // put, so the safest fix is to never write until every account is known good).
+  const newAccountBeforeWrite =
+    input.accountId === existing.accountId ? oldAccount : await accountsStore.get(input.accountId)
+  if (!newAccountBeforeWrite) throw new Error('Account not found')
+
   const now = new Date().toISOString()
   // Reverse the transaction's original effect on its original account.
   const reversal = -transactionDelta(existing.type, oldAccount, existing.amountCents)
 
+  const writes: Promise<unknown>[] = []
   let targetAccount: Account
   if (input.accountId === existing.accountId) {
     targetAccount = { ...oldAccount, balanceCents: oldAccount.balanceCents + reversal }
@@ -92,10 +102,8 @@ export async function updateTransaction(id: string, input: TransactionInput): Pr
       balanceCents: oldAccount.balanceCents + reversal,
       updatedAt: now,
     }
-    await accountsStore.put(revertedOld)
-    const newAccount = await accountsStore.get(input.accountId)
-    if (!newAccount) throw new Error('Account not found')
-    targetAccount = newAccount
+    writes.push(accountsStore.put(revertedOld))
+    targetAccount = newAccountBeforeWrite
   }
 
   const updatedAccount: Account = {
@@ -121,11 +129,10 @@ export async function updateTransaction(id: string, input: TransactionInput): Pr
     updatedAt: now,
   }
 
-  await Promise.all([
-    accountsStore.put(updatedAccount),
-    transactionsStore.put(updatedTransaction),
-    tx.done,
-  ])
+  writes.push(accountsStore.put(updatedAccount))
+  writes.push(transactionsStore.put(updatedTransaction))
+  writes.push(tx.done)
+  await Promise.all(writes)
 
   return updatedTransaction
 }
