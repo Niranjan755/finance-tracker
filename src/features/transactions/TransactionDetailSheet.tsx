@@ -30,7 +30,10 @@ interface TransactionDetailSheetProps {
 export function TransactionDetailSheet({ transaction, onClose }: TransactionDetailSheetProps) {
   const accounts = useFinanceStore((s) => s.accounts)
   const categories = useFinanceStore((s) => s.categories)
+  const transactions = useFinanceStore((s) => s.transactions)
   const removeTransaction = useFinanceStore((s) => s.removeTransaction)
+  const restoreTransaction = useFinanceStore((s) => s.restoreTransaction)
+  const dismissDuplicateFlag = useFinanceStore((s) => s.dismissDuplicateFlag)
   const duplicateTransaction = useFinanceStore((s) => s.duplicateTransaction)
   const openEditTransaction = useUIStore((s) => s.openEditTransaction)
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -43,11 +46,43 @@ export function TransactionDetailSheet({ transaction, onClose }: TransactionDeta
     ? categories.find((c) => c.id === category.parentId)
     : undefined
   const Icon = getIcon(category?.icon ?? 'circle-dashed')
+  const duplicateOf = transaction.possibleDuplicateOfId
+    ? transactions.find((t) => t.id === transaction.possibleDuplicateOfId)
+    : undefined
+
+  async function handleKeepBoth() {
+    if (!transaction) return
+    await dismissDuplicateFlag(transaction.id)
+    toast.success('Kept both transactions')
+  }
+
+  async function handleRemoveManualDuplicate() {
+    if (!transaction || !duplicateOf) return
+    const deleted = await removeTransaction(duplicateOf.id)
+    await dismissDuplicateFlag(transaction.id)
+    toast.success('Manual entry removed', {
+      duration: 8000,
+      action: deleted
+        ? {
+            label: 'Undo',
+            onClick: () => restoreTransaction(deleted.transaction, deleted.receipt),
+          }
+        : undefined,
+    })
+  }
 
   async function handleDelete() {
     if (!transaction) return
-    await removeTransaction(transaction.id)
-    toast.success('Transaction deleted')
+    const deleted = await removeTransaction(transaction.id)
+    toast.success('Transaction deleted', {
+      duration: 8000,
+      action: deleted
+        ? {
+            label: 'Undo',
+            onClick: () => restoreTransaction(deleted.transaction, deleted.receipt),
+          }
+        : undefined,
+    })
     setDeleteOpen(false)
     onClose()
   }
@@ -88,6 +123,25 @@ export function TransactionDetailSheet({ transaction, onClose }: TransactionDeta
               />
               {transaction.plaidTransactionId && <Badge variant="secondary">Synced via Plaid</Badge>}
             </div>
+
+            {duplicateOf && (
+              <div className="space-y-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-xs">
+                <p className="font-medium text-amber-700 dark:text-amber-400">Possible duplicate</p>
+                <p className="text-muted-foreground">
+                  This looks like the same purchase as a transaction you already logged by hand on{' '}
+                  {formatDisplayDate(duplicateOf.date)}
+                  {duplicateOf.merchant ? ` at ${duplicateOf.merchant}` : ''}.
+                </p>
+                <div className="flex gap-2 pt-1">
+                  <Button size="sm" variant="outline" onClick={handleKeepBoth}>
+                    Keep both
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={handleRemoveManualDuplicate}>
+                    Remove manual entry
+                  </Button>
+                </div>
+              </div>
+            )}
 
             <dl className="space-y-3 text-sm">
               <Row

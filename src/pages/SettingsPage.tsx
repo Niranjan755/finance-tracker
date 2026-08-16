@@ -43,6 +43,7 @@ import { PlaidLinkButton } from '@/features/settings/PlaidLinkButton'
 import { useFinanceStore } from '@/store/financeStore'
 import { useAuthStore } from '@/store/authStore'
 import { isSupabaseConfigured } from '@/lib/supabase/client'
+import { disablePushNotifications, enablePushNotifications } from '@/lib/push/subscribe'
 import { syncPlaidNow, unlinkPlaidItem } from '@/lib/plaid/client'
 import { CURRENCIES } from '@/lib/money'
 import { exportTransactionsToCSV } from '@/lib/export/csv'
@@ -146,6 +147,21 @@ export function SettingsPage() {
     }
   }
 
+  async function handleTogglePush(enabled: boolean) {
+    try {
+      if (enabled) {
+        await enablePushNotifications()
+      } else {
+        await disablePushNotifications()
+      }
+      await updateSettings({ pushEnabled: enabled })
+    } catch (error) {
+      toast.error(enabled ? 'Unable to enable push notifications' : 'Unable to disable push notifications', {
+        description: error instanceof Error ? error.message : undefined,
+      })
+    }
+  }
+
   function handleExportJSON() {
     const backup = buildBackup({
       accounts,
@@ -194,9 +210,15 @@ export function SettingsPage() {
   }
 
   async function handleClearData() {
+    const { accounts, categories, transactions, transfers, recurring, budgets, settings } =
+      useFinanceStore.getState()
+    const snapshot = { accounts, categories, transactions, transfers, recurring, budgets, settings }
     await clearAllData()
     setClearConfirmOpen(false)
-    toast.success('All data cleared')
+    toast.success('All data cleared', {
+      duration: 8000,
+      action: { label: 'Undo', onClick: () => replaceAllData(snapshot) },
+    })
   }
 
   const linkedBanks = new Map<string, { institution: string; accountCount: number }>()
@@ -263,6 +285,17 @@ export function SettingsPage() {
         </Section>
 
         <Section title="Notifications">
+          {isSupabaseConfigured() && authStatus === 'signed-in' && (
+            <div className="mb-4 flex items-center justify-between border-b pb-4">
+              <div>
+                <p className="text-sm font-medium">Push notifications</p>
+                <p className="text-muted-foreground text-xs">
+                  Get alerts in your browser, even when the app isn't open.
+                </p>
+              </div>
+              <Switch checked={settings.pushEnabled} onCheckedChange={handleTogglePush} />
+            </div>
+          )}
           <NotificationRow
             label="Upcoming payments"
             checked={settings.notifications.upcomingPayments}

@@ -1,3 +1,4 @@
+import { Copy } from 'lucide-react'
 import { getIcon } from '@/lib/icons'
 import { formatDisplayDate } from '@/lib/date'
 import { MoneyText } from '@/components/finance/MoneyText'
@@ -36,8 +37,14 @@ export function TransactionRow({
         <Icon className="size-4" aria-hidden="true" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">
-          {transaction.merchant || category?.name || 'Transaction'}
+        <p className="flex items-center gap-1.5 truncate text-sm font-medium">
+          <span className="truncate">{transaction.merchant || category?.name || 'Transaction'}</span>
+          {transaction.possibleDuplicateOfId && (
+            <Copy
+              className="text-amber-600 dark:text-amber-400 size-3.5 shrink-0"
+              aria-label="Possible duplicate"
+            />
+          )}
         </p>
         <p className="text-muted-foreground truncate text-xs">
           {category?.name}

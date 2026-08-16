@@ -28,6 +28,7 @@ interface TransferDetailSheetProps {
 export function TransferDetailSheet({ transfer, onClose }: TransferDetailSheetProps) {
   const accounts = useFinanceStore((s) => s.accounts)
   const removeTransfer = useFinanceStore((s) => s.removeTransfer)
+  const restoreTransfer = useFinanceStore((s) => s.restoreTransfer)
   const openEditTransfer = useUIStore((s) => s.openEditTransfer)
   const [deleteOpen, setDeleteOpen] = useState(false)
 
@@ -40,8 +41,11 @@ export function TransferDetailSheet({ transfer, onClose }: TransferDetailSheetPr
 
   async function handleDelete() {
     if (!transfer) return
-    await removeTransfer(transfer.id)
-    toast.success('Transfer deleted')
+    const deleted = await removeTransfer(transfer.id)
+    toast.success('Transfer deleted', {
+      duration: 8000,
+      action: deleted ? { label: 'Undo', onClick: () => restoreTransfer(deleted) } : undefined,
+    })
     setDeleteOpen(false)
     onClose()
   }

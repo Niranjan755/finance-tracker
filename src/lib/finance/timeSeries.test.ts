@@ -50,6 +50,7 @@ function txn(overrides: Partial<Transaction> = {}): Transaction {
     receiptId: null,
     recurringId: null,
     plaidTransactionId: null,
+    possibleDuplicateOfId: null,
     createdAt: '',
     updatedAt: '',
     ...overrides,

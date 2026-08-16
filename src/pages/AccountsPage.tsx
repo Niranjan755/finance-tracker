@@ -31,6 +31,7 @@ export function AccountsPage() {
   const addAccount = useFinanceStore((s) => s.addAccount)
   const updateAccount = useFinanceStore((s) => s.updateAccount)
   const removeAccount = useFinanceStore((s) => s.removeAccount)
+  const restoreAccount = useFinanceStore((s) => s.restoreAccount)
 
   const [formOpen, setFormOpen] = useState(false)
   const [editingAccount, setEditingAccount] = useState<Account | undefined>(undefined)
@@ -105,7 +106,13 @@ export function AccountsPage() {
     if (!deletingAccount) return
     const result = await removeAccount(deletingAccount.id)
     if (result.deleted) {
-      toast.success('Account deleted')
+      const deletedAccount = result.account
+      toast.success('Account deleted', {
+        duration: 8000,
+        action: deletedAccount
+          ? { label: 'Undo', onClick: () => restoreAccount(deletedAccount) }
+          : undefined,
+      })
     } else {
       toast.error('Unable to delete account', { description: result.reason })
     }

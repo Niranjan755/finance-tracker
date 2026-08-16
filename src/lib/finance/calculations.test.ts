@@ -7,10 +7,12 @@ import {
   computeAccountTotals,
   computeAverageMonthlySpending,
   computeBudgetProgress,
+  computeBudgetProgressWithRollover,
   computeCategoryBreakdown,
   computeMonthlyStatement,
   computeSpendingByAccount,
   netWorthAsOf,
+  suggestCategoryForMerchant,
 } from './calculations'
 
 function account(overrides: Partial<Account> = {}): Account {
@@ -54,6 +56,7 @@ function txn(overrides: Partial<Transaction> = {}): Transaction {
     receiptId: null,
     recurringId: null,
     plaidTransactionId: null,
+    possibleDuplicateOfId: null,
     createdAt: '',
     updatedAt: '',
     ...overrides,
@@ -315,7 +318,14 @@ describe('computeBudgetProgress', () => {
       },
     ]
     const budgets: Budget[] = [
-      { id: 'b1', categoryId: 'food', month: 8, year: 2026, amountCents: toCents('600') },
+      {
+        id: 'b1',
+        categoryId: 'food',
+        month: 8,
+        year: 2026,
+        amountCents: toCents('600'),
+        rolloverEnabled: false,
+      },
     ]
     const transactions: Transaction[] = [
       txn({ categoryId: 'food', amountCents: toCents('425'), date: '2026-08-10' }),
@@ -348,13 +358,178 @@ describe('computeBudgetProgress', () => {
       },
     ]
     const budgets: Budget[] = [
-      { id: 'b1', categoryId: 'food', month: 8, year: 2026, amountCents: toCents('600') },
+      {
+        id: 'b1',
+        categoryId: 'food',
+        month: 8,
+        year: 2026,
+        amountCents: toCents('600'),
+        rolloverEnabled: false,
+      },
     ]
     const transactions: Transaction[] = [
       txn({ categoryId: 'restaurants', amountCents: toCents('100'), date: '2026-08-10' }),
     ]
     const [progress] = computeBudgetProgress(budgets, transactions, categories, [], 'USD')
     expect(progress?.spentCents).toBe(toCents('100'))
+  })
+})
+
+describe('computeBudgetProgressWithRollover', () => {
+  const foodCategory: Category = {
+    id: 'food',
+    name: 'Food',
+    type: 'expense',
+    parentId: null,
+    icon: '',
+    color: '',
+    isDefault: true,
+  }
+
+  function budget(overrides: Partial<Budget> = {}): Budget {
+    return {
+      id: `b_${Math.random()}`,
+      categoryId: 'food',
+      month: 8,
+      year: 2026,
+      amountCents: toCents('600'),
+      rolloverEnabled: true,
+      ...overrides,
+    }
+  }
+
+  it('carries unspent amount from a rollover-enabled prior month into the current month', () => {
+    const july = budget({ id: 'july', month: 7, year: 2026, amountCents: toCents('600') })
+    const august = budget({ id: 'august', month: 8, year: 2026, amountCents: toCents('600') })
+    const transactions: Transaction[] = [
+      // July: spent 400 of 600 -> 200 unspent rolls into August.
+      txn({ categoryId: 'food', amountCents: toCents('400'), date: '2026-07-15' }),
+      txn({ categoryId: 'food', amountCents: toCents('300'), date: '2026-08-10' }),
+    ]
+    const [progress] = computeBudgetProgressWithRollover(
+      [july, august],
+      transactions,
+      [foodCategory],
+      [],
+      'USD',
+      8,
+      2026,
+    )
+    expect(progress?.rolloverCents).toBe(toCents('200'))
+    expect(progress?.effectiveLimitCents).toBe(toCents('800'))
+    expect(progress?.remainingCents).toBe(toCents('500'))
+  })
+
+  it('does not carry a debt forward when the prior month was overspent', () => {
+    const july = budget({ id: 'july', month: 7, year: 2026, amountCents: toCents('600') })
+    const august = budget({ id: 'august', month: 8, year: 2026, amountCents: toCents('600') })
+    const transactions: Transaction[] = [
+      // July: overspent by 100.
+      txn({ categoryId: 'food', amountCents: toCents('700'), date: '2026-07-15' }),
+    ]
+    const [progress] = computeBudgetProgressWithRollover(
+      [july, august],
+      transactions,
+      [foodCategory],
+      [],
+      'USD',
+      8,
+      2026,
+    )
+    expect(progress?.rolloverCents).toBe(0)
+    expect(progress?.effectiveLimitCents).toBe(toCents('600'))
+  })
+
+  it('does not roll over when the current budget has rollover disabled', () => {
+    const july = budget({ id: 'july', month: 7, year: 2026, amountCents: toCents('600') })
+    const august = budget({
+      id: 'august',
+      month: 8,
+      year: 2026,
+      amountCents: toCents('600'),
+      rolloverEnabled: false,
+    })
+    const transactions: Transaction[] = [
+      txn({ categoryId: 'food', amountCents: toCents('400'), date: '2026-07-15' }),
+    ]
+    const [progress] = computeBudgetProgressWithRollover(
+      [july, august],
+      transactions,
+      [foodCategory],
+      [],
+      'USD',
+      8,
+      2026,
+    )
+    expect(progress?.rolloverCents).toBe(0)
+  })
+
+  it('stops the chain at a month with no prior budget row', () => {
+    // No July budget exists at all - August has nothing to inherit from.
+    const august = budget({ id: 'august', month: 8, year: 2026, amountCents: toCents('600') })
+    const [progress] = computeBudgetProgressWithRollover(
+      [august],
+      [],
+      [foodCategory],
+      [],
+      'USD',
+      8,
+      2026,
+    )
+    expect(progress?.rolloverCents).toBe(0)
+  })
+
+  it('chains rollover across multiple consecutive months', () => {
+    const june = budget({ id: 'june', month: 6, year: 2026, amountCents: toCents('600') })
+    const july = budget({ id: 'july', month: 7, year: 2026, amountCents: toCents('600') })
+    const august = budget({ id: 'august', month: 8, year: 2026, amountCents: toCents('600') })
+    const transactions: Transaction[] = [
+      // June: spent 500 of 600 -> 100 unspent rolls into July.
+      txn({ categoryId: 'food', amountCents: toCents('500'), date: '2026-06-15' }),
+      // July: budget becomes 700 (600 + 100 rollover), spent 550 -> 150 unspent rolls into August.
+      txn({ categoryId: 'food', amountCents: toCents('550'), date: '2026-07-15' }),
+    ]
+    const [progress] = computeBudgetProgressWithRollover(
+      [june, july, august],
+      transactions,
+      [foodCategory],
+      [],
+      'USD',
+      8,
+      2026,
+    )
+    expect(progress?.rolloverCents).toBe(toCents('150'))
+    expect(progress?.effectiveLimitCents).toBe(toCents('750'))
+  })
+})
+
+describe('suggestCategoryForMerchant', () => {
+  it('returns the most frequent category for past transactions at this merchant', () => {
+    const transactions: Transaction[] = [
+      txn({ merchant: 'Olive Garden', categoryId: 'dining', type: 'expense' }),
+      txn({ merchant: 'Olive Garden', categoryId: 'dining', type: 'expense' }),
+      txn({ merchant: 'Olive Garden', categoryId: 'groceries', type: 'expense' }),
+    ]
+    expect(suggestCategoryForMerchant('Olive Garden', 'expense', transactions)).toBe('dining')
+  })
+
+  it('matches merchant case-insensitively and trims whitespace', () => {
+    const transactions: Transaction[] = [
+      txn({ merchant: 'Olive Garden', categoryId: 'dining', type: 'expense' }),
+    ]
+    expect(suggestCategoryForMerchant('  olive garden  ', 'expense', transactions)).toBe('dining')
+  })
+
+  it('only matches transactions of the same type', () => {
+    const transactions: Transaction[] = [
+      txn({ merchant: 'Acme Corp', categoryId: 'salary', type: 'income' }),
+    ]
+    expect(suggestCategoryForMerchant('Acme Corp', 'expense', transactions)).toBeUndefined()
+  })
+
+  it('returns undefined for an empty merchant or no history', () => {
+    expect(suggestCategoryForMerchant('', 'expense', [])).toBeUndefined()
+    expect(suggestCategoryForMerchant('Unknown Merchant', 'expense', [])).toBeUndefined()
   })
 })
 

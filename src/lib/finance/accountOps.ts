@@ -93,3 +93,10 @@ export async function deleteAccountIfUnused(id: string): Promise<DeleteAccountRe
   await Promise.all([tx.objectStore('accounts').delete(id), tx.done])
   return { deleted: true }
 }
+
+/** Reverses a successful deleteAccountIfUnused. Only ever reachable for
+ *  accounts with zero transaction/transfer history, so this is a plain re-put. */
+export async function restoreAccount(account: Account): Promise<void> {
+  const db = await getDB()
+  await db.put('accounts', account)
+}

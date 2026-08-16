@@ -74,6 +74,10 @@ export interface Transaction {
   recurringId: string | null
   /** Set when this transaction was imported from Plaid - used for sync idempotency and to mark it read-only in the UI. */
   plaidTransactionId: string | null
+  /** Set when a Plaid sync finds an existing manual transaction that looks like the same
+   *  real-world purchase (same type/amount, date within a day). Points at that manual
+   *  transaction's id so the UI can offer to resolve the duplicate; never auto-resolved. */
+  possibleDuplicateOfId: string | null
   createdAt: string
   updatedAt: string
 }
@@ -121,6 +125,9 @@ export interface Budget {
   month: number
   year: number
   amountCents: number
+  /** When true, unused amount from this budget rolls forward into next month's
+   *  budget for the same category (if that budget also has this enabled). */
+  rolloverEnabled: boolean
 }
 
 export interface Receipt {
@@ -154,6 +161,11 @@ export interface Settings {
    *  When false (default), they only appear as projected "Upcoming" items until
    *  the user explicitly records them. */
   autoGenerateRecurring: boolean
+  /** YYYY-MM of the last month a monthly report toast was shown for, so it only shows once. */
+  lastMonthlyReportMonth: string
+  /** Whether the user has opted into real browser push notifications (separate from the
+   *  in-app notification categories above, since this one gates the OS permission/subscription). */
+  pushEnabled: boolean
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -171,4 +183,6 @@ export const DEFAULT_SETTINGS: Settings = {
   onboardingComplete: false,
   userName: '',
   autoGenerateRecurring: false,
+  lastMonthlyReportMonth: '',
+  pushEnabled: false,
 }

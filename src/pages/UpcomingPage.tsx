@@ -44,6 +44,7 @@ export function UpcomingPage() {
   const addRecurring = useFinanceStore((s) => s.addRecurring)
   const editRecurring = useFinanceStore((s) => s.editRecurring)
   const removeRecurring = useFinanceStore((s) => s.removeRecurring)
+  const restoreRecurring = useFinanceStore((s) => s.restoreRecurring)
   const postRecurringNow = useFinanceStore((s) => s.postRecurringNow)
 
   const [formOpen, setFormOpen] = useState(false)
@@ -106,8 +107,11 @@ export function UpcomingPage() {
 
   async function handleDelete() {
     if (!deletingRecurring) return
-    await removeRecurring(deletingRecurring.id)
-    toast.success('Recurring transaction deleted')
+    const deleted = await removeRecurring(deletingRecurring.id)
+    toast.success('Recurring transaction deleted', {
+      duration: 8000,
+      action: deleted ? { label: 'Undo', onClick: () => restoreRecurring(deleted) } : undefined,
+    })
     setDeletingRecurring(null)
   }
 

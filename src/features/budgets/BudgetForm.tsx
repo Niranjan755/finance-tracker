@@ -3,6 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Switch } from '@/components/ui/switch'
 import {
   Select,
   SelectContent,
@@ -18,7 +19,11 @@ interface BudgetFormProps {
   categories: Category[]
   budget?: Budget
   usedCategoryIds: string[]
-  onSubmit: (values: { categoryId: string; amountCents: number }) => Promise<void>
+  onSubmit: (values: {
+    categoryId: string
+    amountCents: number
+    rolloverEnabled: boolean
+  }) => Promise<void>
   onCancel: () => void
 }
 
@@ -44,13 +49,18 @@ export function BudgetForm({
     defaultValues: {
       categoryId: budget?.categoryId ?? '',
       amount: budget ? centsToInputValue(budget.amountCents) : '',
+      rolloverEnabled: budget?.rolloverEnabled ?? false,
     },
   })
 
   return (
     <form
       onSubmit={handleSubmit(async (values) => {
-        await onSubmit({ categoryId: values.categoryId, amountCents: toCents(values.amount) })
+        await onSubmit({
+          categoryId: values.categoryId,
+          amountCents: toCents(values.amount),
+          rolloverEnabled: values.rolloverEnabled,
+        })
       })}
       className="space-y-5"
     >
@@ -98,6 +108,22 @@ export function BudgetForm({
             />
           </div>
           <FieldError errors={[errors.amount]} />
+        </Field>
+
+        <Field className="flex-row items-center justify-between">
+          <div>
+            <FieldLabel htmlFor="budget-rollover">Roll over unused amount</FieldLabel>
+            <p className="text-muted-foreground text-xs">
+              Unspent money carries into next month's budget for this category.
+            </p>
+          </div>
+          <Controller
+            name="rolloverEnabled"
+            control={control}
+            render={({ field }) => (
+              <Switch id="budget-rollover" checked={field.value} onCheckedChange={field.onChange} />
+            )}
+          />
         </Field>
       </FieldGroup>
 

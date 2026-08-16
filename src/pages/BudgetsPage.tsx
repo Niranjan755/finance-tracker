@@ -26,7 +26,7 @@ import {
 import { MoreVertical } from 'lucide-react'
 import { BudgetForm } from '@/features/budgets/BudgetForm'
 import { useFinanceStore } from '@/store/financeStore'
-import { computeBudgetProgress, type BudgetStatus } from '@/lib/finance/calculations'
+import { computeBudgetProgressWithRollover, type BudgetStatus } from '@/lib/finance/calculations'
 import { getIcon } from '@/lib/icons'
 import { formatCurrency } from '@/lib/money'
 import { getMonthBounds } from '@/lib/date'
@@ -61,6 +61,7 @@ export function BudgetsPage() {
   const addBudget = useFinanceStore((s) => s.addBudget)
   const updateBudget = useFinanceStore((s) => s.updateBudget)
   const removeBudget = useFinanceStore((s) => s.removeBudget)
+  const restoreBudget = useFinanceStore((s) => s.restoreBudget)
   const currency = useFinanceStore((s) => s.settings.currency)
 
   const now = new Date()
@@ -76,8 +77,9 @@ export function BudgetsPage() {
     [budgets, year, month],
   )
   const progress = useMemo(
-    () => computeBudgetProgress(monthBudgets, transactions, categories, accounts, currency),
-    [monthBudgets, transactions, categories, accounts, currency],
+    () =>
+      computeBudgetProgressWithRollover(budgets, transactions, categories, accounts, currency, month, year),
+    [budgets, transactions, categories, accounts, currency, month, year],
   )
 
   const totalBudgetCents = monthBudgets.reduce((s, b) => s + b.amountCents, 0)
@@ -99,10 +101,17 @@ export function BudgetsPage() {
     setFormOpen(true)
   }
 
-  async function handleSubmit(values: { categoryId: string; amountCents: number }) {
+  async function handleSubmit(values: {
+    categoryId: string
+    amountCents: number
+    rolloverEnabled: boolean
+  }) {
     try {
       if (editingBudget) {
-        await updateBudget(editingBudget.id, { amountCents: values.amountCents })
+        await updateBudget(editingBudget.id, {
+          amountCents: values.amountCents,
+          rolloverEnabled: values.rolloverEnabled,
+        })
         toast.success('Budget updated')
       } else {
         await addBudget({
@@ -110,6 +119,7 @@ export function BudgetsPage() {
           month,
           year,
           amountCents: values.amountCents,
+          rolloverEnabled: values.rolloverEnabled,
         })
         toast.success('Budget created')
       }
@@ -123,8 +133,11 @@ export function BudgetsPage() {
 
   async function handleDelete() {
     if (!deletingBudget) return
-    await removeBudget(deletingBudget.id)
-    toast.success('Budget deleted')
+    const deleted = await removeBudget(deletingBudget.id)
+    toast.success('Budget deleted', {
+      duration: 8000,
+      action: deleted ? { label: 'Undo', onClick: () => restoreBudget(deleted) } : undefined,
+    })
     setDeletingBudget(null)
   }
 
@@ -231,9 +244,14 @@ export function BudgetsPage() {
                 <div className="mt-4 flex items-baseline justify-between text-sm">
                   <span className="font-semibold">{formatCurrency(p.spentCents, currency)}</span>
                   <span className="text-muted-foreground">
-                    of {formatCurrency(p.budget.amountCents, currency)}
+                    of {formatCurrency(p.effectiveLimitCents, currency)}
                   </span>
                 </div>
+                {p.rolloverCents > 0 && (
+                  <p className="text-muted-foreground mt-1 text-xs">
+                    +{formatCurrency(p.rolloverCents, currency)} rolled over from last month
+                  </p>
+                )}
                 <Progress
                   value={Math.min(p.percentUsed, 100)}
                   className={`mt-2 ${STATUS_BAR_CLASS[p.status]}`}

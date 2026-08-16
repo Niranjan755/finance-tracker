@@ -13,6 +13,7 @@ export const budgetFormSchema = z.object({
     .trim()
     .min(1, 'Amount is required')
     .refine(isValidAmountString, 'Enter a valid positive amount'),
+  rolloverEnabled: z.boolean(),
 })
 
 export type BudgetFormValues = z.infer<typeof budgetFormSchema>

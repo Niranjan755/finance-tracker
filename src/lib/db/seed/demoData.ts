@@ -126,6 +126,7 @@ export async function generateDemoData(): Promise<{
       receiptId: null,
       recurringId: null,
       plaidTransactionId: null,
+      possibleDuplicateOfId: null,
       createdAt: now,
       updatedAt: now,
     })
@@ -317,6 +318,7 @@ export async function generateDemoData(): Promise<{
       month: new Date().getMonth() + 1,
       year: new Date().getFullYear(),
       amountCents: toCents('600'),
+      rolloverEnabled: false,
     },
     {
       id: generateId('budget'),
@@ -324,6 +326,7 @@ export async function generateDemoData(): Promise<{
       month: new Date().getMonth() + 1,
       year: new Date().getFullYear(),
       amountCents: toCents('150'),
+      rolloverEnabled: false,
     },
   ]
 

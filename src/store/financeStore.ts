@@ -8,6 +8,7 @@ import { generateId } from '@/lib/id'
 import {
   createAccount,
   deleteAccountIfUnused,
+  restoreAccount,
   updateAccountMeta,
   type AccountMetaPatch,
   type CreateAccountInput,
@@ -21,17 +22,25 @@ import {
   type RecurringInput,
 } from '@/lib/finance/recurringOps'
 import {
+  clearPossibleDuplicate,
   createTransaction,
   deleteTransaction,
+  restoreTransaction,
   updateTransaction,
 } from '@/lib/finance/transactionOps'
-import { createTransfer, deleteTransfer, updateTransfer } from '@/lib/finance/transferOps'
-import { attachReceipt, removeReceipt } from '@/lib/finance/receiptOps'
+import {
+  createTransfer,
+  deleteTransfer,
+  restoreTransfer,
+  updateTransfer,
+} from '@/lib/finance/transferOps'
+import { attachReceipt, getReceipt, removeReceipt } from '@/lib/finance/receiptOps'
 import { dueOccurrencesForAll, type DueRecurringEntry } from '@/lib/finance/recurringProjection'
 import type {
   Account,
   Budget,
   Category,
+  Receipt,
   RecurringTransaction,
   Settings,
   Transaction,
@@ -79,19 +88,27 @@ interface FinanceState {
 
   addAccount: (input: CreateAccountInput) => Promise<Account>
   updateAccount: (id: string, patch: AccountMetaPatch) => Promise<void>
-  removeAccount: (id: string) => Promise<{ deleted: boolean; reason?: string }>
+  removeAccount: (
+    id: string,
+  ) => Promise<{ deleted: boolean; reason?: string; account?: Account }>
+  restoreAccount: (account: Account) => Promise<void>
 
   addExpense: (input: TransactionFormInput) => Promise<Transaction>
   addIncome: (input: TransactionFormInput) => Promise<Transaction>
   editTransaction: (id: string, input: TransactionFormInput) => Promise<void>
-  removeTransaction: (id: string) => Promise<void>
+  removeTransaction: (
+    id: string,
+  ) => Promise<{ transaction: Transaction; receipt: Receipt | null } | undefined>
+  restoreTransaction: (transaction: Transaction, receipt?: Receipt | null) => Promise<void>
+  dismissDuplicateFlag: (id: string) => Promise<void>
   duplicateTransaction: (id: string) => Promise<Transaction>
   attachReceiptToTransaction: (transactionId: string, file: File) => Promise<void>
   removeReceiptFromTransaction: (transactionId: string) => Promise<void>
 
   addTransfer: (input: TransferFormInput) => Promise<Transfer>
   editTransfer: (id: string, input: TransferFormInput) => Promise<void>
-  removeTransfer: (id: string) => Promise<void>
+  removeTransfer: (id: string) => Promise<Transfer | undefined>
+  restoreTransfer: (transfer: Transfer) => Promise<void>
 
   addCategory: (input: Omit<Category, 'id' | 'isDefault'>) => Promise<Category>
   updateCategory: (id: string, patch: Partial<Omit<Category, 'id'>>) => Promise<void>
@@ -99,14 +116,16 @@ interface FinanceState {
 
   addBudget: (input: Omit<Budget, 'id'>) => Promise<Budget>
   updateBudget: (id: string, patch: Partial<Omit<Budget, 'id'>>) => Promise<void>
-  removeBudget: (id: string) => Promise<void>
+  removeBudget: (id: string) => Promise<Budget | undefined>
+  restoreBudget: (budget: Budget) => Promise<void>
 
   addRecurring: (input: RecurringInput) => Promise<RecurringTransaction>
   editRecurring: (
     id: string,
     patch: Partial<Omit<RecurringTransaction, 'id' | 'createdAt'>>,
   ) => Promise<void>
-  removeRecurring: (id: string) => Promise<void>
+  removeRecurring: (id: string) => Promise<RecurringTransaction | undefined>
+  restoreRecurring: (recurring: RecurringTransaction) => Promise<void>
   postRecurringNow: (id: string, date?: string) => Promise<void>
   runDueRecurring: () => Promise<number>
   previewDueRecurring: () => DueRecurringEntry[]
@@ -216,11 +235,17 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
   },
 
   async removeAccount(id) {
+    const existing = get().accounts.find((a) => a.id === id)
     const result = await deleteAccountIfUnused(id)
     if (result.deleted) {
       set((s) => ({ accounts: s.accounts.filter((a) => a.id !== id) }))
     }
-    return result
+    return { ...result, account: result.deleted ? existing : undefined }
+  },
+
+  async restoreAccount(account) {
+    await restoreAccount(account)
+    set((s) => ({ accounts: [...s.accounts, account] }))
   },
 
   async addExpense(input) {
@@ -262,11 +287,32 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
 
   async removeTransaction(id) {
     const existing = get().transactions.find((t) => t.id === id)
+    if (!existing) return undefined
+    const receipt = existing.receiptId ? ((await getReceipt(existing.receiptId)) ?? null) : null
     await deleteTransaction(id)
-    const account = existing ? await refetchAccount(existing.accountId) : undefined
+    const account = await refetchAccount(existing.accountId)
     set((s) => ({
       transactions: s.transactions.filter((t) => t.id !== id),
       accounts: mergeAccount(s.accounts, account),
+    }))
+    return { transaction: existing, receipt }
+  },
+
+  async restoreTransaction(transaction, receipt) {
+    await restoreTransaction(transaction, receipt)
+    const account = await refetchAccount(transaction.accountId)
+    set((s) => ({
+      transactions: [...s.transactions, transaction],
+      accounts: mergeAccount(s.accounts, account),
+    }))
+  },
+
+  async dismissDuplicateFlag(id) {
+    await clearPossibleDuplicate(id)
+    set((s) => ({
+      transactions: s.transactions.map((t) =>
+        t.id === id ? { ...t, possibleDuplicateOfId: null } : t,
+      ),
     }))
   },
 
@@ -356,6 +402,19 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
     } else {
       set((s) => ({ transfers: s.transfers.filter((t) => t.id !== id) }))
     }
+    return existing
+  },
+
+  async restoreTransfer(transfer) {
+    await restoreTransfer(transfer)
+    const [fromAccount, toAccount] = await Promise.all([
+      refetchAccount(transfer.fromAccountId),
+      refetchAccount(transfer.toAccountId),
+    ])
+    set((s) => ({
+      transfers: [...s.transfers, transfer],
+      accounts: mergeAccount(mergeAccount(s.accounts, fromAccount), toAccount),
+    }))
   },
 
   async addCategory(input) {
@@ -405,8 +464,15 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
   },
 
   async removeBudget(id) {
+    const existing = get().budgets.find((b) => b.id === id)
     await deleteFromStore('budgets', id)
     set((s) => ({ budgets: s.budgets.filter((b) => b.id !== id) }))
+    return existing
+  },
+
+  async restoreBudget(budget) {
+    await putInStore('budgets', budget)
+    set((s) => ({ budgets: [...s.budgets, budget] }))
   },
 
   async addRecurring(input) {
@@ -421,8 +487,15 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
   },
 
   async removeRecurring(id) {
+    const existing = get().recurring.find((r) => r.id === id)
     await deleteRecurring(id)
     set((s) => ({ recurring: s.recurring.filter((r) => r.id !== id) }))
+    return existing
+  },
+
+  async restoreRecurring(recurring) {
+    await putInStore('recurring', recurring)
+    set((s) => ({ recurring: [...s.recurring, recurring] }))
   },
 
   async postRecurringNow(id, date) {

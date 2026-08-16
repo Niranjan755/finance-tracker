@@ -1,6 +1,6 @@
 import { isDateInRange, type MonthBounds } from '@/lib/date'
 import { convertCentsToCurrency, percentOf } from '@/lib/money'
-import type { Account, Budget, Category, Currency, Transaction, Transfer } from '@/types'
+import type { Account, Budget, Category, Currency, Transaction, TransactionType, Transfer } from '@/types'
 import { isLiabilityAccountType } from './math'
 
 /** Converts an amount from the currency of the account that owns it (looked up by id) into `targetCurrency`. */
@@ -252,6 +252,10 @@ export interface BudgetProgress {
   remainingCents: number
   percentUsed: number
   status: BudgetStatus
+  /** Unspent amount carried in from the previous month's budget, if rollover is enabled. */
+  rolloverCents: number
+  /** budget.amountCents + rolloverCents - the actual limit spending is measured against. */
+  effectiveLimitCents: number
 }
 
 function categoryAndDescendantIds(categories: Category[], categoryId: string): Set<string> {
@@ -269,6 +273,26 @@ export function budgetStatusFor(percentUsed: number): BudgetStatus {
   return 'normal'
 }
 
+function computeSpentForBudget(
+  budget: Budget,
+  transactions: Transaction[],
+  categories: Category[],
+  accountById: Map<string, Account>,
+  targetCurrency: Currency,
+): number {
+  const relevantIds = categoryAndDescendantIds(categories, budget.categoryId)
+  return transactions
+    .filter((t) => t.type === 'expense' && relevantIds.has(t.categoryId))
+    .filter((t) => {
+      const [year, month] = t.date.split('-').map(Number)
+      return year === budget.year && month === budget.month
+    })
+    .reduce(
+      (sum, t) => sum + convertedAmount(t.amountCents, t.accountId, accountById, targetCurrency),
+      0,
+    )
+}
+
 export function computeBudgetProgress(
   budgets: Budget[],
   transactions: Transaction[],
@@ -280,18 +304,7 @@ export function computeBudgetProgress(
   const accountById = new Map(accounts.map((a) => [a.id, a]))
 
   return budgets.map((budget) => {
-    const relevantIds = categoryAndDescendantIds(categories, budget.categoryId)
-    const spentCents = transactions
-      .filter((t) => t.type === 'expense' && relevantIds.has(t.categoryId))
-      .filter((t) => {
-        const [year, month] = t.date.split('-').map(Number)
-        return year === budget.year && month === budget.month
-      })
-      .reduce(
-        (sum, t) => sum + convertedAmount(t.amountCents, t.accountId, accountById, targetCurrency),
-        0,
-      )
-
+    const spentCents = computeSpentForBudget(budget, transactions, categories, accountById, targetCurrency)
     const percentUsed = percentOf(spentCents, budget.amountCents)
 
     return {
@@ -301,6 +314,93 @@ export function computeBudgetProgress(
       remainingCents: budget.amountCents - spentCents,
       percentUsed,
       status: budgetStatusFor(percentUsed),
+      rolloverCents: 0,
+      effectiveLimitCents: budget.amountCents,
+    }
+  })
+}
+
+function previousMonthYear(month: number, year: number): { month: number; year: number } {
+  return month === 1 ? { month: 12, year: year - 1 } : { month: month - 1, year }
+}
+
+/**
+ * Walks backward through the chain of consecutive rollover-enabled budgets
+ * for the same category, accumulating each prior month's positive leftover
+ * (overspending never carries forward as a "debt"). Stops as soon as a month
+ * has no budget row, or that budget doesn't have rollover enabled.
+ */
+function computeRolloverCents(
+  budget: Budget,
+  allBudgets: Budget[],
+  transactions: Transaction[],
+  categories: Category[],
+  accountById: Map<string, Account>,
+  targetCurrency: Currency,
+  depth = 0,
+): number {
+  if (!budget.rolloverEnabled || depth > 60) return 0
+  const prev = previousMonthYear(budget.month, budget.year)
+  const prevBudget = allBudgets.find(
+    (b) => b.categoryId === budget.categoryId && b.month === prev.month && b.year === prev.year,
+  )
+  if (!prevBudget || !prevBudget.rolloverEnabled) return 0
+
+  const prevRolloverCents = computeRolloverCents(
+    prevBudget,
+    allBudgets,
+    transactions,
+    categories,
+    accountById,
+    targetCurrency,
+    depth + 1,
+  )
+  const prevSpentCents = computeSpentForBudget(prevBudget, transactions, categories, accountById, targetCurrency)
+  const prevEffectiveLimitCents = prevBudget.amountCents + prevRolloverCents
+  return Math.max(0, prevEffectiveLimitCents - prevSpentCents)
+}
+
+/**
+ * Like computeBudgetProgress, but for budgets with rollover enabled, raises
+ * the effective limit by unspent amounts carried forward from prior months.
+ * Takes the full budget history (not just one month) so it can walk the
+ * rollover chain backward; only budgets in `month`/`year` are returned.
+ */
+export function computeBudgetProgressWithRollover(
+  allBudgets: Budget[],
+  transactions: Transaction[],
+  categories: Category[],
+  accounts: Account[],
+  targetCurrency: Currency,
+  month: number,
+  year: number,
+): BudgetProgress[] {
+  const categoryById = new Map(categories.map((c) => [c.id, c]))
+  const accountById = new Map(accounts.map((a) => [a.id, a]))
+  const monthBudgets = allBudgets.filter((b) => b.month === month && b.year === year)
+
+  return monthBudgets.map((budget) => {
+    const spentCents = computeSpentForBudget(budget, transactions, categories, accountById, targetCurrency)
+    const rolloverCents = computeRolloverCents(
+      budget,
+      allBudgets,
+      transactions,
+      categories,
+      accountById,
+      targetCurrency,
+    )
+    const effectiveLimitCents = budget.amountCents + rolloverCents
+    const percentUsed = percentOf(spentCents, effectiveLimitCents)
+
+    return {
+      budget,
+      category: categoryById.get(budget.categoryId),
+      spentCents,
+      remainingCents: effectiveLimitCents - spentCents,
+      percentUsed,
+      status: budgetStatusFor(percentUsed),
+      rolloverCents,
+      effectiveLimitCents,
     }
   })
 }
@@ -341,6 +441,38 @@ export function computeCashFlow(
     transfersCents,
     netCashFlowCents: moneyInCents - moneyOutCents,
   }
+}
+
+/**
+ * The most frequently used category for past transactions at this merchant
+ * (matched case-insensitively, and only within the same income/expense
+ * type, since a merchant can mean different things on each side). Used to
+ * pre-fill the category field when adding a new transaction.
+ */
+export function suggestCategoryForMerchant(
+  merchant: string,
+  type: TransactionType,
+  transactions: Transaction[],
+): string | undefined {
+  const normalized = merchant.trim().toLowerCase()
+  if (!normalized) return undefined
+
+  const counts = new Map<string, number>()
+  for (const t of transactions) {
+    if (t.type !== type || t.merchant.trim().toLowerCase() !== normalized) continue
+    counts.set(t.categoryId, (counts.get(t.categoryId) ?? 0) + 1)
+  }
+  if (counts.size === 0) return undefined
+
+  let bestCategoryId: string | undefined
+  let bestCount = 0
+  for (const [categoryId, count] of counts) {
+    if (count > bestCount) {
+      bestCategoryId = categoryId
+      bestCount = count
+    }
+  }
+  return bestCategoryId
 }
 
 export interface MerchantStat {

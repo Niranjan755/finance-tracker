@@ -180,3 +180,40 @@ export async function deleteTransfer(id: string): Promise<void> {
   writes.push(tx.done)
   await Promise.all(writes)
 }
+
+/** Reverses deleteTransfer: reinserts the transfer and reapplies both accounts' balance deltas. */
+export async function restoreTransfer(transfer: Transfer): Promise<void> {
+  const db = await getDB()
+  const tx = db.transaction(['accounts', 'transfers'], 'readwrite')
+  const transfersStore = tx.objectStore('transfers')
+  const accountsStore = tx.objectStore('accounts')
+
+  const [fromAccount, toAccount] = await Promise.all([
+    accountsStore.get(transfer.fromAccountId),
+    accountsStore.get(transfer.toAccountId),
+  ])
+  const now = new Date().toISOString()
+  const writes: Promise<unknown>[] = []
+  if (fromAccount) {
+    writes.push(
+      accountsStore.put({
+        ...fromAccount,
+        balanceCents:
+          fromAccount.balanceCents + debitDelta(fromAccount.type, transfer.fromAmountCents),
+        updatedAt: now,
+      }),
+    )
+  }
+  if (toAccount) {
+    writes.push(
+      accountsStore.put({
+        ...toAccount,
+        balanceCents: toAccount.balanceCents + creditDelta(toAccount.type, transfer.toAmountCents),
+        updatedAt: now,
+      }),
+    )
+  }
+  writes.push(transfersStore.put(transfer))
+  writes.push(tx.done)
+  await Promise.all(writes)
+}

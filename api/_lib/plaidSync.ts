@@ -4,6 +4,7 @@ import { getServiceClient } from './supabase.js'
 import { loadAppState, saveAppState, upsertTransactions, type AppSnapshot } from './appState.js'
 import { mapPlaidCategory } from './categoryMap.js'
 import { refreshAppAccount } from './plaidAccount.js'
+import { findDuplicateManualTransaction } from '../../src/lib/finance/duplicateMatch.js'
 import type { Transaction } from '../../src/types/index.js'
 
 function toAppTransaction(t: PlaidTransaction): Transaction {
@@ -24,6 +25,7 @@ function toAppTransaction(t: PlaidTransaction): Transaction {
     receiptId: null,
     recurringId: null,
     plaidTransactionId: t.transaction_id,
+    possibleDuplicateOfId: null,
     createdAt: now,
     updatedAt: now,
   }
@@ -76,7 +78,13 @@ export async function syncPlaidItem(itemId: string): Promise<SyncResult> {
 
   let payload: AppSnapshot = await loadAppState(supabase, item.user_id)
 
-  const newTransactions = [...added, ...modified].map(toAppTransaction)
+  // Flag (never silently merge or delete) any new Plaid transaction that
+  // looks like the same real-world purchase as one the user already entered
+  // by hand - e.g. they tracked this account manually before linking it.
+  const newTransactions = [...added, ...modified].map(toAppTransaction).map((t) => {
+    const duplicate = findDuplicateManualTransaction(t, payload.transactions)
+    return duplicate ? { ...t, possibleDuplicateOfId: duplicate.id } : t
+  })
   payload = upsertTransactions(payload, newTransactions)
 
   const removedIds = new Set(removed.map((r) => r.transaction_id).filter((id): id is string => !!id))

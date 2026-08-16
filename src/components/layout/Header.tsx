@@ -1,5 +1,6 @@
 import { useLocation } from 'react-router-dom'
 import { SidebarTrigger } from '@/components/ui/sidebar'
+import { NotificationBell } from '@/features/notifications/NotificationBell'
 import { GlobalSearch } from './GlobalSearch'
 import { ThemeToggle } from './ThemeToggle'
 import { ALL_NAV } from './navConfig'
@@ -16,6 +17,7 @@ export function Header() {
       <h1 className="text-base font-semibold md:text-lg">{current?.label ?? 'Finance Tracker'}</h1>
       <div className="ml-auto flex items-center gap-2">
         <GlobalSearch />
+        <NotificationBell />
         <ThemeToggle />
       </div>
     </header>

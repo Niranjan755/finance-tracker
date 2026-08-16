@@ -14,6 +14,8 @@ import {
 } from '@/lib/validation/transaction'
 import { centsToInputValue, CURRENCIES, toCents } from '@/lib/money'
 import { todayISODate } from '@/lib/date'
+import { suggestCategoryForMerchant } from '@/lib/finance/calculations'
+import { useFinanceStore } from '@/store/financeStore'
 import type { Account, Category, Transaction, TransactionType } from '@/types'
 import type { TransactionFormInput } from '@/store/financeStore'
 
@@ -36,11 +38,14 @@ export function ExpenseIncomeForm({
   onSubmit,
   onCancel,
 }: ExpenseIncomeFormProps) {
+  const transactions = useFinanceStore((s) => s.transactions)
   const {
     register,
     handleSubmit,
     control,
     watch,
+    getValues,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<TransactionFormValues>({
     resolver: zodResolver(transactionFormSchema),
@@ -61,6 +66,12 @@ export function ExpenseIncomeForm({
   const selectedAccountId = watch('accountId')
   const selectedAccountCurrency = accounts.find((a) => a.id === selectedAccountId)?.currency
   const currencySymbol = CURRENCIES.find((c) => c.code === selectedAccountCurrency)?.symbol ?? '$'
+
+  function handleMerchantBlur() {
+    if (transaction || getValues('categoryId')) return
+    const suggestion = suggestCategoryForMerchant(getValues('merchant'), type, transactions)
+    if (suggestion) setValue('categoryId', suggestion, { shouldValidate: true })
+  }
 
   return (
     <form
@@ -142,7 +153,7 @@ export function ExpenseIncomeForm({
             <Input
               id={`${type}-merchant`}
               placeholder={type === 'expense' ? 'Olive Garden' : 'Employer name'}
-              {...register('merchant')}
+              {...register('merchant', { onBlur: handleMerchantBlur })}
             />
           </Field>
           <Field>
