@@ -1,17 +1,28 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { syncPlaidItem } from '../_lib/plaidSync.js'
+import { verifyPlaidWebhook } from '../_lib/plaidWebhookVerify.js'
+
+// Verifying the signature requires the exact raw bytes Plaid sent (see
+// plaidWebhookVerify.ts) - disable Vercel's automatic JSON body parsing so
+// we can read and hash the untouched body ourselves before trusting it.
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+}
+
+async function readRawBody(req: VercelRequest): Promise<string> {
+  const chunks: Buffer[] = []
+  for await (const chunk of req) {
+    chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : (chunk as Buffer))
+  }
+  return Buffer.concat(chunks).toString('utf8')
+}
 
 /**
  * Plaid calls this whenever new transaction data is ready for an Item. This
  * is what makes sync automatic - no button, no polling. Registered
  * automatically via the `webhook` field passed in create-link-token.ts.
- *
- * SECURITY NOTE: this does not yet verify Plaid's webhook signature
- * (the `Plaid-Verification` JWT header - see Plaid's webhook verification
- * docs). That's fine for Sandbox testing, where there's no real financial
- * data and no real attacker incentive, but it MUST be added before this
- * goes anywhere near Production - right now anyone who discovers this URL
- * could POST a fake `item_id` and trigger a sync for it.
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -19,7 +30,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return
   }
 
-  const body = req.body as { webhook_type?: string; item_id?: string }
+  const rawBody = await readRawBody(req)
+  const verified = await verifyPlaidWebhook(req.headers['plaid-verification'], rawBody)
+  if (!verified) {
+    res.status(401).json({ error: 'Invalid webhook signature' })
+    return
+  }
+
+  const body = JSON.parse(rawBody) as { webhook_type?: string; item_id?: string }
 
   // Acknowledge immediately regardless - Plaid retries on non-2xx, and we
   // don't want a slow/failed sync to look like a webhook delivery failure.
