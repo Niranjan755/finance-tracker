@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { advanceByFrequency, getMonthBounds, isDateInRange, parseISODate, toISODate } from './date'
+import {
+  advanceByFrequency,
+  getMonthBounds,
+  getTimeOfDay,
+  isDateInRange,
+  parseISODate,
+  toISODate,
+} from './date'
 
 describe('getMonthBounds', () => {
   it('computes the first and last day of a month', () => {
@@ -45,5 +52,22 @@ describe('advanceByFrequency', () => {
     expect(toISODate(advanceByFrequency(parseISODate('2026-01-15'), 'quarterly'))).toBe(
       '2026-04-15',
     )
+  })
+})
+
+describe('getTimeOfDay', () => {
+  it('returns morning before noon', () => {
+    expect(getTimeOfDay(new Date(2026, 7, 14, 0, 0))).toBe('morning')
+    expect(getTimeOfDay(new Date(2026, 7, 14, 11, 59))).toBe('morning')
+  })
+
+  it('returns afternoon from noon up to 5pm', () => {
+    expect(getTimeOfDay(new Date(2026, 7, 14, 12, 0))).toBe('afternoon')
+    expect(getTimeOfDay(new Date(2026, 7, 14, 16, 59))).toBe('afternoon')
+  })
+
+  it('returns evening from 5pm onward', () => {
+    expect(getTimeOfDay(new Date(2026, 7, 14, 17, 0))).toBe('evening')
+    expect(getTimeOfDay(new Date(2026, 7, 14, 23, 59))).toBe('evening')
   })
 })

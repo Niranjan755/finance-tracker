@@ -28,7 +28,7 @@ import {
   rangeFromPreset,
   type DateRangePreset,
 } from '@/lib/finance/timeSeries'
-import { getMonthBounds, isDateInRange, todayISODate } from '@/lib/date'
+import { getMonthBounds, getTimeOfDay, isDateInRange, todayISODate } from '@/lib/date'
 import { getIcon } from '@/lib/icons'
 import { isLiabilityAccountType } from '@/lib/finance/math'
 import { formatCurrency } from '@/lib/money'
@@ -50,7 +50,13 @@ export function DashboardPage() {
   const transfers = useFinanceStore((s) => s.transfers)
   const categories = useFinanceStore((s) => s.categories)
   const currency = useFinanceStore((s) => s.settings.currency)
+  const userName = useFinanceStore((s) => s.settings.userName)
   const [preset, setPreset] = useState<DateRangePreset>('30d')
+
+  const timeOfDay = getTimeOfDay()
+  const greeting = userName.trim()
+    ? `Good ${timeOfDay}, ${userName.trim()}`
+    : `Hey, good ${timeOfDay}`
 
   const totals = computeAccountTotals(accounts, currency)
   const totalsByCurrency = Object.values(totals.byCurrency).filter((group) => group.totalAssetsCents > 0 || group.totalLiabilitiesCents > 0)
@@ -100,7 +106,7 @@ export function DashboardPage() {
     return (
       <div>
         <PageHeader
-          title="Dashboard"
+          title={greeting}
           description="Your complete financial picture, updated in real time."
         />
         <EmptyState
@@ -121,7 +127,7 @@ export function DashboardPage() {
   return (
     <div>
       <PageHeader
-        title="Dashboard"
+        title={greeting}
         description={bounds.label}
         actions={<AddTransactionMenu className="hidden sm:inline-flex" />}
       />

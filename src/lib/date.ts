@@ -128,3 +128,13 @@ export function isDateBefore(a: string, b: string): boolean {
 export function isDateAfter(a: string, b: string): boolean {
   return isAfter(parseISODate(a), parseISODate(b))
 }
+
+export type TimeOfDay = 'morning' | 'afternoon' | 'evening'
+
+/** Buckets the local system time into morning (<12), afternoon (<17), or evening. */
+export function getTimeOfDay(now: Date = new Date()): TimeOfDay {
+  const hour = now.getHours()
+  if (hour < 12) return 'morning'
+  if (hour < 17) return 'afternoon'
+  return 'evening'
+}
