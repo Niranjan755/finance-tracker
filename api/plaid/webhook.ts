@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { syncPlaidItem } from '../_lib/plaidSync'
+import { syncPlaidItem } from '../_lib/plaidSync.js'
 
 /**
  * Plaid calls this whenever new transaction data is ready for an Item. This

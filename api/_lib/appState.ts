@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { getDefaultCategories } from '../../src/lib/db/seed/categories'
-import { DEFAULT_SETTINGS } from '../../src/types'
+import { getDefaultCategories } from '../../src/lib/db/seed/categories.js'
+import { DEFAULT_SETTINGS } from '../../src/types/index.js'
 import type {
   Account,
   Budget,
@@ -9,7 +9,7 @@ import type {
   Settings,
   Transaction,
   Transfer,
-} from '../../src/types'
+} from '../../src/types/index.js'
 
 /**
  * Mirrors the client's AppSnapshot shape (src/lib/sync/engine.ts) so the

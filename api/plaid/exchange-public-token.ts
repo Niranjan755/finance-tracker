@@ -1,9 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { requireUser } from '../_lib/auth'
-import { getPlaidClient } from '../_lib/plaid'
-import { getServiceClient } from '../_lib/supabase'
-import { loadAppState, saveAppState, upsertAccount, type AppSnapshot } from '../_lib/appState'
-import { toAppAccount } from '../_lib/plaidAccount'
+import { requireUser } from '../_lib/auth.js'
+import { getPlaidClient } from '../_lib/plaid.js'
+import { getServiceClient } from '../_lib/supabase.js'
+import { loadAppState, saveAppState, upsertAccount, type AppSnapshot } from '../_lib/appState.js'
+import { toAppAccount } from '../_lib/plaidAccount.js'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {

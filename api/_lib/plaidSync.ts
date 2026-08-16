@@ -1,10 +1,10 @@
 import type { RemovedTransaction, Transaction as PlaidTransaction } from 'plaid'
-import { getPlaidClient } from './plaid'
-import { getServiceClient } from './supabase'
-import { loadAppState, saveAppState, upsertTransactions, type AppSnapshot } from './appState'
-import { mapPlaidCategory } from './categoryMap'
-import { refreshAppAccount } from './plaidAccount'
-import type { Transaction } from '../../src/types'
+import { getPlaidClient } from './plaid.js'
+import { getServiceClient } from './supabase.js'
+import { loadAppState, saveAppState, upsertTransactions, type AppSnapshot } from './appState.js'
+import { mapPlaidCategory } from './categoryMap.js'
+import { refreshAppAccount } from './plaidAccount.js'
+import type { Transaction } from '../../src/types/index.js'
 
 function toAppTransaction(t: PlaidTransaction): Transaction {
   const isIncome = t.amount < 0

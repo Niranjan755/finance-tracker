@@ -1,5 +1,5 @@
 import type { AccountBase } from 'plaid'
-import type { Account, AccountType } from '../../src/types'
+import type { Account, AccountType } from '../../src/types/index.js'
 
 export function mapAccountType(plaidType: string, plaidSubtype: string | null): AccountType {
   if (plaidType === 'credit') return 'credit_card'

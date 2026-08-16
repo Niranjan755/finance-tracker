@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { Products, CountryCode } from 'plaid'
-import { requireUser } from '../_lib/auth'
-import { getPlaidClient } from '../_lib/plaid'
+import { requireUser } from '../_lib/auth.js'
+import { getPlaidClient } from '../_lib/plaid.js'
 
 function webhookUrl(): string | undefined {
   if (process.env.PLAID_WEBHOOK_URL) return process.env.PLAID_WEBHOOK_URL

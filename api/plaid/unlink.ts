@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { requireUser } from '../_lib/auth'
-import { getPlaidClient } from '../_lib/plaid'
-import { getServiceClient } from '../_lib/supabase'
-import { loadAppState, saveAppState } from '../_lib/appState'
+import { requireUser } from '../_lib/auth.js'
+import { getPlaidClient } from '../_lib/plaid.js'
+import { getServiceClient } from '../_lib/supabase.js'
+import { loadAppState, saveAppState } from '../_lib/appState.js'
 
 /**
  * Unlinks a bank (Plaid Item): revokes the access token with Plaid, deletes
